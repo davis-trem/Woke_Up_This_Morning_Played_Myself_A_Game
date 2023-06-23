@@ -96,11 +96,11 @@ var triggers = {
 					func (stat): return stat.family_2_resepect * 0.1,
 				],
 				'stat_requirement': [
-					func (stat): return stat.money > (50000 / (1 - clampf(stat.heat, 0.01, 0.99))),
+					func (stat): return stat.money > (50000 / (1 - clampf(stat.get(Player.STAT_TYPE.HEAT), 0.01, 0.99))),
 					func (stat): return stat.street_smarts > 0.3,
 				],
 				'stat_updates': [
-					{'name': Player.STAT_TYPE.MONEY, 'value': func (stat): return -(50000 / (1 - clampf(stat.heat, 0.01, 0.99)))},
+					{'name': Player.STAT_TYPE.MONEY, 'value': func (stat): return -(50000 / (1 - clampf(stat.get(Player.STAT_TYPE.HEAT), 0.01, 0.99)))},
 					{'name': Player.STAT_TYPE.HEAT, 'value': 0.1},
 				],
 			},
@@ -115,10 +115,12 @@ var triggers = {
 		'condition': func (stat): return,
 		'outcomes': [
 			{
-				'action': 'service time',
+				'action': 'served time',
 				'chance': 1,
 				'stat_updates': [
-					{'name': Player.STAT_TYPE.STREET_SMART, 'value': func (stat): stat.heat * 0.5},
+					{'name': Player.STAT_TYPE.STREET_SMART, 'value': func (stat): return stat.get(Player.STAT_TYPE.HEAT) * 0.5},
+					{'name': Player.STAT_TYPE.RENTALS, 'value': func (stat): stat[Player.STAT_TYPE.RENTALS] = stat.get(Player.STAT_TYPE.RENTALS).duplicate().slice(0, clampi(2 - ceili(stat.get(Player.STAT_TYPE.HEAT) * 10), -stat.get(Player.STAT_TYPE.RENTALS).size(), 0)) if stat.get(Player.STAT_TYPE.RENTALS, []).size() > 0 and stat.get(Player.STAT_TYPE.HEAT) > 0.4 else stat.get(Player.STAT_TYPE.RENTALS, []); return false},
+					{'name': Player.STAT_TYPE.BUSINESSES, 'value': func (stat): stat[Player.STAT_TYPE.BUSINESSES] = [] if stat.get(Player.STAT_TYPE.HEAT) >= 0.2 else stat.get(Player.STAT_TYPE.BUSINESSES); return false}
 				]
 			}
 		]
@@ -138,29 +140,27 @@ var triggers = {
 func trigger_event(player: Player, trigger_type):
 	var applicable_outcomes = [];
 	if trigger_type != null:
-		applicable_outcomes = triggers[trigger_type]['outcomes']
+		applicable_outcomes = triggers[trigger_type].get('outcomes')
 	else:
 		for type in triggers:
 			if triggers[type].call(player.stats):
-				applicable_outcomes.append_array(triggers[type]['outcomes'])
+				applicable_outcomes.append_array(triggers[type].get('outcomes'))
 	
 	var outcomes = _calculate_outcomes_accumulated_chance(applicable_outcomes, player.stats)
-	var chance = randf_range(0, outcomes[outcomes.size() - 1]['accumulated_chance'])
+	var chance = randf_range(0, outcomes[outcomes.size() - 1].get('accumulated_chance'))
 	for outcome in outcomes:
-		if outcome['accumulated_chance'] > chance:
-			for stat_update in (outcome['stat_updates'] or []):
+		if outcome.get('accumulated_chance') > chance:
+			for stat_update in outcome.get('stat_updates', []):
 				var update_value = (
-					stat_update['value'].call(player.stats) 
-					if typeof(stat_update['value']) == TYPE_CALLABLE 
-					else stat_update['value']
+					stat_update.get('value').call(player.stats) 
+					if typeof(stat_update.get('value')) == TYPE_CALLABLE 
+					else stat_update.get('value')
 				)
-				if update_value == false:
-					player.stats[stat_update['name']] = update_value
-				else:
-					player.stats[stat_update['name']] += update_value
-		if outcome['trigger']:
-			trigger_event(player.stats, outcome['trigger'])
-		elif outcome['event']:
+				if not (typeof(update_value) == TYPE_BOOL and update_value == false):
+					player.stats[stat_update.get('name')] += update_value
+		if outcome.get('trigger'):
+			trigger_event(player.stats, outcome.get('trigger'))
+		elif outcome.get('event'):
 			# Present Event
 			pass
 	
@@ -178,9 +178,9 @@ func _calculate_outcomes_accumulated_chance(outcomes: Array, stats) -> Array:
 	var outcomes_accumulated_chance = []
 	var accumulated_chance = 0
 	for outcome in outcomes:
-		for chance_multiplers in (outcome['chance_multiplers'] or []):
+		for chance_multiplers in outcome.get('chance_multiplers', []):
 			accumulated_chance += chance_multiplers.call(stats)
-		outcomes_accumulated_chance = outcome
-		outcomes_accumulated_chance['accumulated_chance'] = accumulated_chance + outcome['chance']
+		outcomes_accumulated_chance.append(outcome)
+		outcomes_accumulated_chance[outcomes_accumulated_chance.size() - 1]['accumulated_chance'] = accumulated_chance + outcome.get('chance')
 	return outcomes_accumulated_chance
 

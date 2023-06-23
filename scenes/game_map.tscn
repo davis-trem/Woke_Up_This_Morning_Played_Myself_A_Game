@@ -1,3 +1,6 @@
-[gd_scene format=3 uid="uid://cbbf3ehpra2pu"]
+[gd_scene load_steps=2 format=3 uid="uid://cbbf3ehpra2pu"]
+
+[ext_resource type="Script" path="res://scripts/game_map.gd" id="1_ah75c"]
 
 [node name="GameMap" type="Node2D"]
+script = ExtResource("1_ah75c")
