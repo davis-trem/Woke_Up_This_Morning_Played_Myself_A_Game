@@ -1,0 +1,152 @@
+[gd_scene load_steps=2 format=3 uid="uid://cbbf3ehpra2pu"]
+
+[ext_resource type="Script" path="res://scripts/game_map.gd" id="1_ftilf"]
+
+[node name="GameMap" type="Node2D"]
+script = ExtResource("1_ftilf")
+
+[node name="TerritoryControl" type="Control" parent="."]
+custom_minimum_size = Vector2(720, 720)
+layout_mode = 3
+anchors_preset = 0
+offset_right = 40.0
+offset_bottom = 40.0
+
+[node name="Territories" type="GridContainer" parent="TerritoryControl"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -100.0
+offset_top = -100.0
+offset_right = 100.0
+offset_bottom = 100.0
+grow_horizontal = 2
+grow_vertical = 2
+columns = 3
+
+[node name="NeighborhoodMenu" type="Panel" parent="."]
+visible = false
+custom_minimum_size = Vector2(720, 720)
+offset_right = 40.0
+offset_bottom = 40.0
+
+[node name="ColorRect" type="ColorRect" parent="NeighborhoodMenu"]
+custom_minimum_size = Vector2(500, 500)
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -20.0
+offset_top = -20.0
+offset_right = 20.0
+offset_bottom = 20.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="MarginContainer" type="MarginContainer" parent="NeighborhoodMenu/ColorRect"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 20
+theme_override_constants/margin_right = 20
+theme_override_constants/margin_bottom = 20
+
+[node name="VBoxContainer" type="VBoxContainer" parent="NeighborhoodMenu/ColorRect/MarginContainer"]
+layout_mode = 2
+
+[node name="NameLabel" type="Label" parent="NeighborhoodMenu/ColorRect/MarginContainer/VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 0
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_font_sizes/font_size = 30
+text = "Neighborhood"
+horizontal_alignment = 1
+
+[node name="MarginContainer" type="MarginContainer" parent="NeighborhoodMenu/ColorRect/MarginContainer/VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/margin_top = 20
+
+[node name="VBoxContainer" type="VBoxContainer" parent="NeighborhoodMenu/ColorRect/MarginContainer/VBoxContainer/MarginContainer"]
+layout_mode = 2
+
+[node name="GridContainer" type="GridContainer" parent="NeighborhoodMenu/ColorRect/MarginContainer/VBoxContainer/MarginContainer/VBoxContainer"]
+layout_mode = 2
+theme_override_constants/h_separation = 20
+columns = 2
+
+[node name="RentLabel" type="Label" parent="NeighborhoodMenu/ColorRect/MarginContainer/VBoxContainer/MarginContainer/VBoxContainer/GridContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+text = "Rent: $1000"
+
+[node name="BusinessStartCostLabel" type="Label" parent="NeighborhoodMenu/ColorRect/MarginContainer/VBoxContainer/MarginContainer/VBoxContainer/GridContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+text = "Cost to Start Business: $1000"
+
+[node name="BusinessUpkeepLabel" type="Label" parent="NeighborhoodMenu/ColorRect/MarginContainer/VBoxContainer/MarginContainer/VBoxContainer/GridContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+text = "Cost to Upkeep Business: $1000"
+
+[node name="BusinessPayoutLabel" type="Label" parent="NeighborhoodMenu/ColorRect/MarginContainer/VBoxContainer/MarginContainer/VBoxContainer/GridContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+text = "Business Payout: $1000"
+
+[node name="Fam1OwnershipLabel" type="Label" parent="NeighborhoodMenu/ColorRect/MarginContainer/VBoxContainer/MarginContainer/VBoxContainer/GridContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+text = "Family 1 Ownership:"
+horizontal_alignment = 2
+
+[node name="Fam1OwnershipProgressBar" type="ProgressBar" parent="NeighborhoodMenu/ColorRect/MarginContainer/VBoxContainer/MarginContainer/VBoxContainer/GridContainer"]
+layout_mode = 2
+size_flags_vertical = 1
+max_value = 1.0
+show_percentage = false
+
+[node name="Fam2OwnershipLabel" type="Label" parent="NeighborhoodMenu/ColorRect/MarginContainer/VBoxContainer/MarginContainer/VBoxContainer/GridContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+text = "Family 2 Ownership:"
+horizontal_alignment = 2
+
+[node name="Fam2OwnershipProgressBar" type="ProgressBar" parent="NeighborhoodMenu/ColorRect/MarginContainer/VBoxContainer/MarginContainer/VBoxContainer/GridContainer"]
+layout_mode = 2
+size_flags_vertical = 1
+max_value = 1.0
+show_percentage = false
+
+[node name="ActionsButton" type="MenuButton" parent="NeighborhoodMenu/ColorRect/MarginContainer/VBoxContainer/MarginContainer/VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 0
+text = "Choose Action"
+flat = false
+
+[node name="StatusLabel" type="Label" parent="NeighborhoodMenu/ColorRect/MarginContainer/VBoxContainer/MarginContainer"]
+visible = false
+layout_mode = 2
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+text = "Error"
+
+[node name="CloseButton" type="Button" parent="NeighborhoodMenu/ColorRect/MarginContainer/VBoxContainer/MarginContainer"]
+layout_mode = 2
+size_flags_vertical = 8
+text = "Close"

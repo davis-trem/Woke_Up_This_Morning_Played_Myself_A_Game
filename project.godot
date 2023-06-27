@@ -18,6 +18,12 @@ config/icon="res://icon.svg"
 
 events="*res://scripts/events.gd"
 
+[display]
+
+window/size/viewport_width=720
+window/size/viewport_height=720
+window/handheld/orientation=6
+
 [editor]
 
 version_control/plugin_name="GitPlugin"
