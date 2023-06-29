@@ -23,13 +23,26 @@ enum NEIGHBORHOOD_ACTIONS {
 	START_BUSINESS,
 }
 
+var players = {}
+var local_player_multiplayer_unique_id
+
 # Called when the node enters the scene tree for the first time.
 func _ready():
+	var multiplayer_unique_id = multiplayer.get_unique_id()
+	add_player(multiplayer_unique_id)
+	
 	neighborhood_menu_close_button.connect('pressed', neighborhood_menu.hide)
 	for action in NEIGHBORHOOD_ACTIONS:
 		neighborhood_menu_actions_button.get_popup().add_item(action)
 	neighborhood_menu_actions_button.get_popup().connect('id_pressed', _neighborhood_menu_action_selected)
 	_draw_territories()
+
+
+func add_player(peer_id):
+	set_multiplayer_authority(peer_id)
+	players[peer_id] = Player.new()
+	if peer_id == multiplayer.get_unique_id():
+		local_player_multiplayer_unique_id = peer_id
 
 
 # Called every frame. 'delta' is the elapsed time since the previous frame.
@@ -81,4 +94,4 @@ func _neighborhood_menu_action_selected(id):
 		NEIGHBORHOOD_ACTIONS.RENT:
 			print('pooo')
 		NEIGHBORHOOD_ACTIONS.START_BUSINESS:
-			print('bbb')
+			pass
