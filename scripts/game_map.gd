@@ -15,6 +15,7 @@ var neighborhood_scene = preload('res://scenes/neighborhood.tscn')
 @onready var neighborhood_menu_fam_2_ownership_progress_bar = $NeighborhoodMenu/ColorRect/MarginContainer/VBoxContainer/MarginContainer/VBoxContainer/GridContainer/Fam2OwnershipProgressBar
 @onready var neighborhood_menu_close_button = $NeighborhoodMenu/ColorRect/MarginContainer/VBoxContainer/MarginContainer/CloseButton
 @onready var neighborhood_menu_actions_button = $NeighborhoodMenu/ColorRect/MarginContainer/VBoxContainer/MarginContainer/VBoxContainer/ActionsButton
+@onready var events = Events.new()
 
 @export var territory_count: int = 9
 
@@ -28,6 +29,7 @@ var local_player_multiplayer_unique_id
 
 # Called when the node enters the scene tree for the first time.
 func _ready():
+	prints(events.EVENT_TYPE.FAMILY_1_OFFERS_LOAN, 'poo')
 	var multiplayer_unique_id = multiplayer.get_unique_id()
 	add_player(multiplayer_unique_id)
 	

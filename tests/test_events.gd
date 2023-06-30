@@ -9,6 +9,7 @@ func test_trigger_event(params=use_parameters(ParameterFactory.named_parameters(
 		[0.2, 0.1, 10, 0],
 	]
 ))):
+	var events = Events.new()
 	var player = Player.new()
 	player.stats[Player.STAT_TYPE.HEAT] = params.heat
 	player.stats[Player.STAT_TYPE.RENTALS] = [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}]

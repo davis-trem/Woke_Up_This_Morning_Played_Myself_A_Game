@@ -15,10 +15,6 @@ run/main_scene="res://screens/game_map.tscn"
 config/features=PackedStringArray("4.0", "GL Compatibility")
 config/icon="res://icon.svg"
 
-[autoload]
-
-events="*res://scripts/events.gd"
-
 [display]
 
 window/size/viewport_width=720

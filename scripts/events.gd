@@ -1,5 +1,7 @@
 extends Node
 
+class_name Events
+
 enum EVENT_TYPE {
 	BANK_OFFERS_LOAN,
 	FAMILY_1_OFFERS_LOAN,
@@ -136,6 +138,7 @@ var triggers = {
 		]
 	},
 }
+
 
 func trigger_event(player: Player, trigger_type):
 	var applicable_outcomes = [];
