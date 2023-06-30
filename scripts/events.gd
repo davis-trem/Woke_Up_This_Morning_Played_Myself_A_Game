@@ -2,6 +2,8 @@ extends Node
 
 class_name Events
 
+const Player = preload('res://scripts/player.gd')
+
 enum EVENT_TYPE {
 	BANK_OFFERS_LOAN,
 	FAMILY_1_OFFERS_LOAN,

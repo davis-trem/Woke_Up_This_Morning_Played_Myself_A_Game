@@ -1,6 +1,9 @@
 extends Node2D
 
-var neighborhood_scene = preload('res://scenes/neighborhood.tscn')
+const neighborhood_scene = preload('res://scenes/neighborhood.tscn')
+const Player = preload('res://scripts/player.gd')
+const Events = preload('res://scripts/events.gd')
+const Neighborhood = preload('res://scripts/neighborhood.gd')
 
 @onready var territories = $TerritoryControl/Territories
 @onready var neighborhood_menu = $NeighborhoodMenu

@@ -1,5 +1,8 @@
 extends GutTest
 
+const Events = preload('res://scripts/events.gd')
+const Player = preload('res://scripts/player.gd')
+
 
 func test_trigger_event(params=use_parameters(ParameterFactory.named_parameters(
 	['heat', 'street_smart', 'rentals_size', 'businesses_size'],
