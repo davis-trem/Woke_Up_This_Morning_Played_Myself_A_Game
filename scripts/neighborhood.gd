@@ -1,28 +1,22 @@
+class_name Neighborhood
 extends ColorRect
 
-class_name Neighborhood
+
+const NeighborhoodStats = preload('res://resources/neighborhood_stats.gd')
 
 @onready var name_label = $Name
 @onready var status_label = $Status
 
-var stats = {
-	'name': '',
-	'business_model': {
-		'cost_to_start': 0,
-		'cost_to_run': 0,
-		'payout': 0,
-	},
-	'family_1_ownership': 0,
-	'family_2_ownership': 0,
-	'rent': 0,
-}
+var stats: NeighborhoodStats
+var initial_status_label_text = ''
 
 var _input_handler: Callable = func (event, n): return
 
 
 # Called when the node enters the scene tree for the first time.
 func _ready():
-	name_label.text = stats.get('name')
+	name_label.text = stats.name
+	status_label.text = initial_status_label_text
 
 
 # Called every frame. 'delta' is the elapsed time since the previous frame.
@@ -44,5 +38,4 @@ func _input(event):
 
 func set_input_handler(handler: Callable):
 	_input_handler = handler
-
 
