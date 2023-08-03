@@ -14,7 +14,7 @@ func test_trigger_event(params=use_parameters(ParameterFactory.named_parameters(
 		[0.2, 0.1, 10, 0],
 	]
 ))):
-	var game_map = game_map_scene.instantiate()
+	var game_map = create_game_map()
 	var events: Events = Events.new()
 	game_map.events = events
 	
@@ -30,3 +30,14 @@ func test_trigger_event(params=use_parameters(ParameterFactory.named_parameters(
 	# if player.heat >= 0.2 loss all businesses, else businesses aren't touched
 	assert_eq(player.businesses.size(), params.businesses_size)
 
+
+func create_game_map():
+	var game_map = game_map_scene.instantiate()
+	
+	game_map.trigger_menu = Panel.new()
+	game_map.trigger_menu_description_label = Label.new()
+	game_map.trigger_menu_status_label = Label.new()
+	game_map.trigger_menu_options_button = Button.new()
+	game_map.trigger_menu_confirm_button = Button.new()
+	
+	return game_map

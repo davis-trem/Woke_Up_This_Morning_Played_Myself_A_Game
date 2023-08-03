@@ -52,6 +52,7 @@ func _ready():
 		neighborhood_menu_actions_button.get_popup().add_item(action)
 	neighborhood_menu_actions_button.get_popup().connect('id_pressed', _neighborhood_menu_action_selected)
 	_create_or_load_save()
+	event_timer.start()
 
 
 func _create_or_load_save():
@@ -149,11 +150,16 @@ func _neighborhood_menu_action_selected(id):
 func trigger_event(player: Player, trigger_type = null):
 	trigger_menu_description_label.text = ''
 	trigger_menu_status_label.text = ''
+	for i in trigger_menu_options_button.get_popup().item_count:
+		trigger_menu_options_button.get_popup().remove_item(i)
 	trigger_menu_options_button.hide()
 	trigger_menu_confirm_button.hide()
 	
 	var applicable_outcomes = [];
 	if trigger_type != null:
+		for outcome in events.triggers[trigger_type].get('outcomes'):
+			if outcome.get('triggered_by') == null:
+				outcome['triggered_by'] = trigger_type
 		applicable_outcomes = events.triggers[trigger_type].get('outcomes')
 	else:
 		for type in events.triggers:
@@ -178,6 +184,8 @@ func trigger_event(player: Player, trigger_type = null):
 			player.past_four_triggers.append(outcome.get('triggered_by'))
 			if (player.past_four_triggers.size() > 4):
 				player.past_four_triggers.pop_front()
+			
+			trigger_menu_description_label.text = outcome.get('triggered_by')
 			trigger_menu.show()
 			for stat_update in outcome.get('stat_updates', []):
 				_handle_stat_updates(stat_update, player)
@@ -188,13 +196,14 @@ func trigger_event(player: Player, trigger_type = null):
 				)
 				trigger_menu_confirm_button.show()
 			elif outcome.get('event'):
-				for option in outcome.get('event').get('options'):
+				var event_options = events.events.get(outcome.get('event')).get('options')
+				for option in event_options:
 					trigger_menu_options_button.get_popup().add_item(option.get('type'))
 				trigger_menu_options_button.get_popup().connect(
 					'id_pressed',
 					func (id): _trigger_menu_option_selected(
 						id,
-						outcome.get('event').get('options'),
+						event_options,
 						player
 					)
 				)
@@ -202,9 +211,10 @@ func trigger_event(player: Player, trigger_type = null):
 			else:
 				trigger_menu_confirm_button.connect(
 					'pressed',
-					func (): trigger_menu.hide()
+					_hide_trigger_menu
 				)
 				trigger_menu_confirm_button.show()
+			break
 	
 	if _save_game:
 		_save_game.write_savegame()
@@ -216,14 +226,21 @@ func _handle_stat_updates(stat_update, player: Player):
 		if typeof(stat_update.get('value')) == TYPE_STRING
 		else stat_update.get('value')
 	)
+	var stat_name = stat_update.get('name')
 	if not (typeof(update_value) == TYPE_BOOL and update_value == false):
-		player.set(stat_update.get('name'), update_value)
-	var new_value = player.get(stat_update.get('name'))
+		player.set(stat_name, player.get(stat_name) + update_value)
+		
+	var new_value = player.get(stat_name)
 	trigger_menu_status_label.text += (
-		'You now have {1} {0}\n'.format([stat_update.get('name'), new_value.size()])
+		'You now have {1} {0}\n'.format([stat_name, new_value.size()])
 		if typeof(new_value) == TYPE_ARRAY
-		else '{0} is now {1}\n'.format([stat_update.get('name'), new_value])
+		else '{0} is now {1}\n'.format([stat_name, new_value])
 	)
+
+
+func _hide_trigger_menu():
+	trigger_menu.hide()
+	event_timer.start()
 
 
 func _trigger_menu_option_selected(selected_id, options, player):
@@ -232,7 +249,7 @@ func _trigger_menu_option_selected(selected_id, options, player):
 	trigger_menu_options_button.hide()
 	trigger_menu_confirm_button.connect(
 		'pressed',
-		func (): trigger_menu.hide()
+		_hide_trigger_menu
 	)
 	trigger_menu_confirm_button.show()
 	var text = trigger_menu_options_button.get_popup().get_item_text(selected_id)
@@ -245,6 +262,7 @@ func _trigger_menu_option_selected(selected_id, options, player):
 					'pressed',
 					func (): trigger_event(player, option.get('trigger'))
 				)
+			_save_game.write_savegame()
 			return
 
 
@@ -262,8 +280,13 @@ func _calculate_outcomes_accumulated_chance(outcomes: Array, player) -> Array:
 	
 		for chance_multipler in outcome.get('chance_multiplers', []):
 			accumulated_chance += _evaluateString(chance_multipler, player)
+		accumulated_chance += outcome.get('chance')
+		
 		outcomes_accumulated_chance.append(outcome)
-		outcomes_accumulated_chance[outcomes_accumulated_chance.size() - 1]['accumulated_chance'] = accumulated_chance + outcome.get('chance')
+		outcomes_accumulated_chance[outcomes_accumulated_chance.size() - 1]['accumulated_chance'] = accumulated_chance
+	outcomes_accumulated_chance.sort_custom(
+		func (a, b): return a.get('accumulated_chance') < b.get('accumulated_chance')
+	)
 	return outcomes_accumulated_chance
 
 
@@ -277,6 +300,7 @@ func _evaluateString(command: String, player):
 
 
 func _on_event_timer_timeout():
+	event_timer.stop()
 	var player: Player = players[local_player_multiplayer_unique_id]
 	player.money += player.income
 	for neighborhood_index in player.rentals:
@@ -286,12 +310,12 @@ func _on_event_timer_timeout():
 		player.money += territories.get_child(business.territory_index).stats.business_payout
 		if business.get('extortioner'):
 			pass
-	
+
 	if player.rentals.size() == 0:
 		player.sanity -= 0.1
 		if player.sanity < 0:
 			print('player ends')
-	
+
 	trigger_event(players[local_player_multiplayer_unique_id])
-	event_timer.start()
-	print('agaaain')
+	if not trigger_menu.visible:
+		event_timer.start()
