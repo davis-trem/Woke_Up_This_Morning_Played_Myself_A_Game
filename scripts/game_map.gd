@@ -27,6 +27,9 @@ const Neighborhood = preload('res://scripts/neighborhood.gd')
 @onready var trigger_menu_options_button = $TriggerMenu/ColorRect/MarginContainer/VBoxContainer/OptionsButton
 @onready var trigger_menu_confirm_button = $TriggerMenu/ColorRect/MarginContainer/ConfirmButton
 @onready var event_timer = $EventTimer
+@onready var stats_menu_money_label = $StatsMenuControl/Panel/MarginContainer/HBoxContainer/MoneyLabel
+@onready var stats_menu_sanity_progress_bar = $StatsMenuControl/Panel/MarginContainer/HBoxContainer/SanityProgressBar
+@onready var stats_menu_show_stats_button = $StatsMenuControl/Panel/MarginContainer/HBoxContainer/ShowStatsButton
 
 @onready var events = Events.new()
 
@@ -55,6 +58,14 @@ func _ready():
 	event_timer.start()
 
 
+func _process(delta):
+	if players.get(local_player_multiplayer_unique_id):
+		stats_menu_money_label.text = '${0}'.format([
+			players[local_player_multiplayer_unique_id].money
+		])
+		stats_menu_sanity_progress_bar.value = players[local_player_multiplayer_unique_id].sanity
+
+
 func _create_or_load_save():
 	if SaveGame.save_exists():
 		_save_game = SaveGame.load_savegame() as SaveGame
@@ -66,6 +77,7 @@ func _create_or_load_save():
 		_save_game.players = players
 		_save_game.events = events
 		_draw_territories()
+		_assign_player_to_neiborhood()
 		_save_game.write_savegame()
 
 
@@ -73,15 +85,30 @@ func add_player(peer_id):
 	set_multiplayer_authority(peer_id)
 	players[peer_id] = Player.new()
 	players[peer_id].id = peer_id
-	for i in range(territory_count):
-		players[peer_id].territories_respect.append(0)
 	if peer_id == multiplayer.get_unique_id():
 		local_player_multiplayer_unique_id = peer_id
 
 
-# Called every frame. 'delta' is the elapsed time since the previous frame.
-func _process(delta):
-	pass
+func _assign_player_to_neiborhood():
+	var territory_index = randi() % territories.get_child_count()
+	
+	players[local_player_multiplayer_unique_id].rentals.append(territory_index)
+	territories.get_child(territory_index).status_label.text = 'Rented'
+	
+	if territories.get_child(territory_index).stats.family_1_ownership >= 0.8:
+		players[local_player_multiplayer_unique_id].money = 5000
+		players[local_player_multiplayer_unique_id].street_smart = 0.3
+		players[local_player_multiplayer_unique_id].heat = 0.2
+		players[local_player_multiplayer_unique_id].family_1_respect = 0.2
+		players[local_player_multiplayer_unique_id].family_2_respect = -0.2
+	elif territories.get_child(territory_index).stats.family_2_ownership >= 0.8:
+		players[local_player_multiplayer_unique_id].money = 7000
+		players[local_player_multiplayer_unique_id].street_smart = 0.2
+		players[local_player_multiplayer_unique_id].heat = 0.1
+		players[local_player_multiplayer_unique_id].family_1_respect = 0.2
+		players[local_player_multiplayer_unique_id].family_2_respect = -0.3
+	else:
+		players[local_player_multiplayer_unique_id].money = 50000
 
 
 func _draw_territories(size: int = territory_count, save_exist: bool = false):
@@ -91,19 +118,39 @@ func _draw_territories(size: int = territory_count, save_exist: bool = false):
 		
 		if save_exist:
 			neighborhood.stats = _save_game.neighoborhood_stats_list[i]
+			if players[local_player_multiplayer_unique_id].rentals.has(i):
+				neighborhood.initial_status_label_text = 'Rented'
 		else:
+			players[local_player_multiplayer_unique_id].territories_respect.append(0)
+			
 			neighborhood.stats = NeighborhoodStats.new()
 			neighborhood.stats.name = 'Yeer{0}'.format([i])
-			neighborhood.stats.business_payout = 0
-			neighborhood.stats.cost_to_start_business = 5000
-			neighborhood.stats.cost_to_run_business = 0
-			neighborhood.stats.family_1_ownership = 0.0
-			neighborhood.stats.family_2_ownership = 0.6
-			neighborhood.stats.rent = 1000
+			# 50% of map ran by fam_1, 30% ran by fam_2, 20% is neutral
+			if i < size / 2:
+				neighborhood.stats.family_1_ownership = 1.0
+				neighborhood.stats.family_2_ownership = 0.0
+				neighborhood.stats.job_payout = [100, 200, 300][randi() % 3]
+				neighborhood.stats.business_payout = [1000, 2000, 3000][randi() % 3]
+				neighborhood.stats.cost_to_start_business = [20000, 30000, 40000][randi() % 3]
+				neighborhood.stats.cost_to_run_business = [2000, 3000, 4000][randi() % 3]
+				neighborhood.stats.rent = [1000, 2000, 3000][randi() % 3]
+			elif i <= (size / 2 + ((size / 2) / 2)):
+				neighborhood.stats.family_1_ownership = 0.0
+				neighborhood.stats.family_2_ownership = 1.0
+				neighborhood.stats.job_payout = [400, 500, 600][randi() % 3]
+				neighborhood.stats.business_payout = [4000, 5000, 6000][randi() % 3]
+				neighborhood.stats.cost_to_start_business = [50000, 60000, 70000][randi() % 3]
+				neighborhood.stats.cost_to_run_business = [5000, 6000, 7000][randi() % 3]
+				neighborhood.stats.rent = [4000, 5000, 6000][randi() % 3]
+			else:
+				neighborhood.stats.family_1_ownership = 0.0
+				neighborhood.stats.family_2_ownership = 0.0
+				neighborhood.stats.job_payout = [700, 800, 900][randi() % 3]
+				neighborhood.stats.business_payout = [7000, 8000, 9000][randi() % 3]
+				neighborhood.stats.cost_to_start_business = [80000, 90000, 100000][randi() % 3]
+				neighborhood.stats.cost_to_run_business = [8000, 9000, 10000][randi() % 3]
+				neighborhood.stats.rent = [7000, 8000, 9000][randi() % 3]
 			_save_game.neighoborhood_stats_list.append(neighborhood.stats)
-		
-		if players[local_player_multiplayer_unique_id].rentals.has(i):
-			neighborhood.initial_status_label_text = 'Rented'
 		
 		territories.add_child(neighborhood)
 

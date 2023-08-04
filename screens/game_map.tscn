@@ -1,6 +1,7 @@
-[gd_scene load_steps=2 format=3 uid="uid://cbbf3ehpra2pu"]
+[gd_scene load_steps=3 format=3 uid="uid://cbbf3ehpra2pu"]
 
 [ext_resource type="Script" path="res://scripts/game_map.gd" id="1_ftilf"]
+[ext_resource type="PackedScene" uid="uid://drm50b6ex8wt1" path="res://scenes/horizontal_spacer.tscn" id="2_4obur"]
 
 [node name="GameMap" type="Node2D"]
 script = ExtResource("1_ftilf")
@@ -26,6 +27,61 @@ offset_bottom = 100.0
 grow_horizontal = 2
 grow_vertical = 2
 columns = 3
+
+[node name="StatsMenuControl" type="Control" parent="."]
+custom_minimum_size = Vector2(720, 50)
+layout_mode = 3
+anchors_preset = 0
+offset_right = 720.0
+offset_bottom = 50.0
+
+[node name="Panel" type="Panel" parent="StatsMenuControl"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="MarginContainer" type="MarginContainer" parent="StatsMenuControl/Panel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 10
+
+[node name="HBoxContainer" type="HBoxContainer" parent="StatsMenuControl/Panel/MarginContainer"]
+layout_mode = 2
+
+[node name="MoneyLabel" type="Label" parent="StatsMenuControl/Panel/MarginContainer/HBoxContainer"]
+layout_mode = 2
+text = "Money: $1000"
+
+[node name="HorizontalSpacer" parent="StatsMenuControl/Panel/MarginContainer/HBoxContainer" instance=ExtResource("2_4obur")]
+layout_mode = 2
+
+[node name="Label2" type="Label" parent="StatsMenuControl/Panel/MarginContainer/HBoxContainer"]
+layout_mode = 2
+text = "Sanity:"
+
+[node name="SanityProgressBar" type="ProgressBar" parent="StatsMenuControl/Panel/MarginContainer/HBoxContainer"]
+custom_minimum_size = Vector2(200, 0)
+layout_mode = 2
+size_flags_vertical = 1
+max_value = 1.0
+show_percentage = false
+
+[node name="HorizontalSpacer2" parent="StatsMenuControl/Panel/MarginContainer/HBoxContainer" instance=ExtResource("2_4obur")]
+layout_mode = 2
+
+[node name="ShowStatsButton" type="Button" parent="StatsMenuControl/Panel/MarginContainer/HBoxContainer"]
+layout_mode = 2
+text = "Show More"
 
 [node name="NeighborhoodMenu" type="Panel" parent="."]
 visible = false
