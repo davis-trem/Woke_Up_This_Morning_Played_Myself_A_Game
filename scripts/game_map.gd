@@ -150,8 +150,7 @@ func _neighborhood_menu_action_selected(id):
 func trigger_event(player: Player, trigger_type = null):
 	trigger_menu_description_label.text = ''
 	trigger_menu_status_label.text = ''
-	for i in trigger_menu_options_button.get_popup().item_count:
-		trigger_menu_options_button.get_popup().remove_item(i)
+	trigger_menu_options_button.get_popup().clear()
 	trigger_menu_options_button.hide()
 	trigger_menu_confirm_button.hide()
 	

@@ -31,13 +31,34 @@ func test_trigger_event(params=use_parameters(ParameterFactory.named_parameters(
 	assert_eq(player.businesses.size(), params.businesses_size)
 
 
+func test_trigger_menu_options_button_items_reset():
+	var game_map = create_game_map()
+	var events: Events = Events.new()
+	game_map.events = events
+	var player: Player = Player.new()
+	
+	assert_eq(game_map.trigger_menu_options_button.get_popup().item_count, 0)
+	
+	game_map.trigger_event(player, Constants.TRIGGER_ROBBED_BY_FAMILY_1)
+	assert_eq(
+		game_map.trigger_menu_options_button.get_popup().item_count,
+		events.events[Constants.EVENT_ROBBED_BY_FAMILY_1].get('options').size()
+	)
+	
+	game_map.trigger_event(player, Constants.TRIGGER_ROBBED_BY_FAMILY_2)
+	assert_eq(
+		game_map.trigger_menu_options_button.get_popup().item_count,
+		events.events[Constants.EVENT_ROBBED_BY_FAMILY_2].get('options').size()
+	)
+
+
 func create_game_map():
 	var game_map = game_map_scene.instantiate()
 	
 	game_map.trigger_menu = Panel.new()
 	game_map.trigger_menu_description_label = Label.new()
 	game_map.trigger_menu_status_label = Label.new()
-	game_map.trigger_menu_options_button = Button.new()
+	game_map.trigger_menu_options_button = MenuButton.new()
 	game_map.trigger_menu_confirm_button = Button.new()
 	
 	return game_map
