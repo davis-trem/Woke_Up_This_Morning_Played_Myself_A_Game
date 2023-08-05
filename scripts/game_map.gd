@@ -267,21 +267,34 @@ func trigger_event(player: Player, trigger_type = null):
 
 
 func _handle_stat_updates(stat_update, player: Player):
+	var stat_name = stat_update.get('name')
+	var old_value = player.get(stat_name)
+	
 	var update_value = (
 		_evaluateString(stat_update.get('value'), player)
 		if typeof(stat_update.get('value')) == TYPE_STRING
 		else stat_update.get('value')
 	)
-	var stat_name = stat_update.get('name')
 	if not (typeof(update_value) == TYPE_BOOL and update_value == false):
 		player.set(stat_name, player.get(stat_name) + update_value)
 		
 	var new_value = player.get(stat_name)
-	trigger_menu_status_label.text += (
-		'You now have {1} {0}\n'.format([stat_name, new_value.size()])
-		if typeof(new_value) == TYPE_ARRAY
-		else '{0} is now {1}\n'.format([stat_name, new_value])
+	var change_text = (
+		'lost' if (
+			(typeof(new_value) == TYPE_ARRAY and old_value.size() > new_value.size())
+			or old_value > new_value
+		)
+		else 'gained'
 	)
+	
+	trigger_menu_status_label.text += 'You have {CHANGE} {DIFF} {STAT}'.format({
+		'CHANGE': change_text,
+		'STAT': stat_name,
+		'DIFF': (
+			new_value.size() - old_value.size() if typeof(new_value) == TYPE_ARRAY
+			else new_value - old_value
+		)
+	}) + '\n'
 
 
 func _hide_trigger_menu():
