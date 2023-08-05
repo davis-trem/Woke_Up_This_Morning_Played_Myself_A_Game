@@ -102,7 +102,7 @@ func _assign_player_to_neiborhood():
 		players[local_player_multiplayer_unique_id].family_1_respect = 0.2
 		players[local_player_multiplayer_unique_id].family_2_respect = -0.2
 	elif territories.get_child(territory_index).stats.family_2_ownership >= 0.8:
-		players[local_player_multiplayer_unique_id].money = 7000
+		players[local_player_multiplayer_unique_id].money = 10000
 		players[local_player_multiplayer_unique_id].street_smart = 0.2
 		players[local_player_multiplayer_unique_id].heat = 0.1
 		players[local_player_multiplayer_unique_id].family_1_respect = 0.2
@@ -345,22 +345,101 @@ func _evaluateString(command: String, player):
 	return ref.eval(player)
 
 
+func _calculate_total_expenses():
+	var player: Player = players[local_player_multiplayer_unique_id]
+	
+	var total_rent = 0
+	for territory_index in player.rentals:
+		total_rent += territories.get_child(territory_index).stats.rent
+	
+	var total_business_costs = 0
+	for business in player.businesses:
+		total_business_costs += territories\
+			.get_child(business.get('territory_index')).stats.cost_to_run_business
+		if business.get('extortioner'):
+			pass # TODO
+			
+	var total_loan_payments = 0
+	for loan in player.loans:
+		pass # TODO
+	
+	return total_rent + total_business_costs + total_loan_payments
+
+
+func _apply_expenses():
+	var player: Player = players[local_player_multiplayer_unique_id]
+	
+	var cannot_afford = {'rentals': [], 'businesses': []}
+	for territory_index in player.rentals:
+		var rent = territories.get_child(territory_index).stats.rent
+		if player.money >= rent:
+			player.money -= rent
+		else:
+			cannot_afford['rentals'].append(territory_index)
+		# Check if owns business in territory
+		for business in player.businesses:
+			if business.get('territory_index') == territory_index:
+				var business_cost = territories.get_child(territory_index).stats.cost_to_run_business
+				if business.get('extortioner'):
+					pass # TODO
+				
+				# if cannot afford rent then cannot keep business
+				if (
+					cannot_afford.get('rentals').find(territory_index) == -1
+					and player.money >= business_cost
+				):
+					player.money -= business_cost
+				else:
+					cannot_afford['businesses'].append(territory_index)
+	
+	for territory_index in cannot_afford.get('rentals'):
+		player.rentals = player.rentals.filter(func (ti): ti != territory_index)
+	
+	for territory_index in cannot_afford.get('businesses'):
+		player.businesses = player.businesses.filter(
+			func (b): b.get('territory_index') != territory_index
+		)
+	
+	for loan in player.loans:
+		pass # TODO
+
+
+func _calculate_total_income():
+	var player: Player = players[local_player_multiplayer_unique_id]
+	
+	var job_payout = 0
+	if player.job and player.job.get('territory_index'):
+		job_payout = territories.get_child(player.job.get('territory_index')).stats.job_payout
+	
+	var total_business_payout = 0
+	for business in player.businesses:
+		total_business_payout += territories\
+			.get_child(business.get('territory_index')).stats.business_payout
+	
+	var fam_1_payout = 0
+	if player.family_1_respect >= 0.7:
+		pass # TODO
+	
+	var fam_2_payout = 0
+	if player.family_2_respect >= 0.7:
+		pass # TODO
+	
+	return job_payout + total_business_payout + fam_1_payout + fam_2_payout
+
+
 func _on_event_timer_timeout():
 	event_timer.stop()
 	var player: Player = players[local_player_multiplayer_unique_id]
-	player.money += player.income
-	for neighborhood_index in player.rentals:
-		player.money -= territories.get_child(neighborhood_index).stats.rent
-	for business in player.businesses:
-		player.money -= territories.get_child(business.territory_index).stats.cost_to_run_business
-		player.money += territories.get_child(business.territory_index).stats.business_payout
-		if business.get('extortioner'):
-			pass
+	player.money += _calculate_total_income()
+	_apply_expenses()
 
 	if player.rentals.size() == 0:
-		player.sanity -= 0.1
-		if player.sanity < 0:
-			print('player ends')
+		player.sanity -= 0.3
+
+	if player.sanity < 0:
+		print('player ends')
+	
+	_save_game.write_savegame()
 
 	trigger_event(players[local_player_multiplayer_unique_id])
 	if not trigger_menu.visible:
