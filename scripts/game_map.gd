@@ -50,10 +50,10 @@ func _ready():
 	var multiplayer_unique_id = multiplayer.get_unique_id()
 	add_player(multiplayer_unique_id)
 	
-	neighborhood_menu_close_button.connect('pressed', _close_neighborhood_menu)
+	neighborhood_menu_close_button.pressed.connect(_close_neighborhood_menu)
 	for action in NEIGHBORHOOD_ACTIONS:
 		neighborhood_menu_actions_button.get_popup().add_item(action)
-	neighborhood_menu_actions_button.get_popup().connect('id_pressed', _neighborhood_menu_action_selected)
+	neighborhood_menu_actions_button.get_popup().id_pressed.connect(_neighborhood_menu_action_selected)
 	_create_or_load_save()
 	event_timer.start()
 
@@ -114,7 +114,7 @@ func _assign_player_to_neiborhood():
 func _draw_territories(size: int = territory_count, save_exist: bool = false):
 	for i in range(size):
 		var neighborhood = neighborhood_scene.instantiate()
-		neighborhood.connect('pressed', func (): _show_neighborhood_menu(neighborhood))
+		neighborhood.pressed.connect(func (): _show_neighborhood_menu(neighborhood))
 		
 		if save_exist:
 			neighborhood.stats = _save_game.neighoborhood_stats_list[i]
@@ -236,8 +236,7 @@ func trigger_event(player: Player, trigger_type = null):
 			for stat_update in outcome.get('stat_updates', []):
 				_handle_stat_updates(stat_update, player)
 			if outcome.get('trigger'):
-				trigger_menu_confirm_button.connect(
-					'pressed',
+				trigger_menu_confirm_button.pressed.connect(
 					func (): trigger_event(player, outcome.get('trigger'))
 				)
 				trigger_menu_confirm_button.show()
@@ -245,8 +244,7 @@ func trigger_event(player: Player, trigger_type = null):
 				var event_options = events.events.get(outcome.get('event')).get('options')
 				for option in event_options:
 					trigger_menu_options_button.get_popup().add_item(option.get('type'))
-				trigger_menu_options_button.get_popup().connect(
-					'id_pressed',
+				trigger_menu_options_button.get_popup().id_pressed.connect(
 					func (id): _trigger_menu_option_selected(
 						id,
 						event_options,
@@ -255,10 +253,7 @@ func trigger_event(player: Player, trigger_type = null):
 				)
 				trigger_menu_options_button.show()
 			else:
-				trigger_menu_confirm_button.connect(
-					'pressed',
-					_hide_trigger_menu
-				)
+				trigger_menu_confirm_button.pressed.connect(_hide_trigger_menu)
 				trigger_menu_confirm_button.show()
 			break
 	
@@ -306,21 +301,17 @@ func _trigger_menu_option_selected(selected_id, options, player):
 	trigger_menu_description_label.text = ''
 	trigger_menu_status_label.text = ''
 	trigger_menu_options_button.hide()
-	trigger_menu_confirm_button.connect(
-		'pressed',
-		_hide_trigger_menu
-	)
-	trigger_menu_confirm_button.show()
 	var text = trigger_menu_options_button.get_popup().get_item_text(selected_id)
 	for option in options:
+		# Found selected event option
 		if text == option.get('type'):
 			for stat_update in option.get('stat_updates', []):
 				_handle_stat_updates(stat_update, player)
-			if option.get('trigger'):
-				trigger_menu_confirm_button.connect(
-					'pressed',
-					func (): trigger_event(player, option.get('trigger'))
-				)
+			trigger_menu_confirm_button.pressed.connect(
+				(func (): trigger_event(player, option.get('trigger'))) if option.get('trigger')
+				else _hide_trigger_menu
+			)
+			trigger_menu_confirm_button.show()
 			_save_game.write_savegame()
 			return
 
