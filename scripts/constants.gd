@@ -13,6 +13,15 @@ const PLAYER_SANITY = 'sanity'
 const PLAYER_STREET_SMART = 'street_smart'
 const PLAYER_TERRITORIES_RESPECT = 'territories_respect'
 
+const STATS_LIMITS = {
+	PLAYER_FAMILY_1_RESPECT: {'min': -1.0, 'max': 1.0},
+	PLAYER_FAMILY_2_RESPECT: {'min': -1.0, 'max': 1.0},
+	PLAYER_HEAT: {'min': 0.0, 'max': 1.0},
+	PLAYER_SANITY: {'min': 0.0, 'max': 1.0},
+	PLAYER_STREET_SMART: {'min': 0.0, 'max': 1.0},
+	PLAYER_TERRITORIES_RESPECT: {'min': -1.0, 'max': 1.0},
+}
+
 const EVENT_BANK_OFFERS_LOAN = 'event_bank_offers_loan'
 const EVENT_FAMILY_1_OFFERS_LOAN = 'event_family_1_offers_loan'
 const EVENT_FAMILY_1_OFFERS_WORK = 'event_family_1_offers_work'

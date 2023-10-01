@@ -70,14 +70,14 @@ grow_horizontal = 2
 grow_vertical = 2
 columns = 3
 
-[node name="StatsMenuControl" type="Control" parent="."]
+[node name="StatsPreviewControl" type="Control" parent="."]
 custom_minimum_size = Vector2(720, 50)
 layout_mode = 3
 anchors_preset = 0
 offset_right = 720.0
 offset_bottom = 50.0
 
-[node name="Panel" type="Panel" parent="StatsMenuControl"]
+[node name="Panel" type="Panel" parent="StatsPreviewControl"]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -85,7 +85,7 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="MarginContainer" type="MarginContainer" parent="StatsMenuControl/Panel"]
+[node name="MarginContainer" type="MarginContainer" parent="StatsPreviewControl/Panel"]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -97,21 +97,21 @@ theme_override_constants/margin_top = 10
 theme_override_constants/margin_right = 10
 theme_override_constants/margin_bottom = 10
 
-[node name="HBoxContainer" type="HBoxContainer" parent="StatsMenuControl/Panel/MarginContainer"]
+[node name="HBoxContainer" type="HBoxContainer" parent="StatsPreviewControl/Panel/MarginContainer"]
 layout_mode = 2
 
-[node name="MoneyLabel" type="Label" parent="StatsMenuControl/Panel/MarginContainer/HBoxContainer"]
+[node name="MoneyLabel" type="Label" parent="StatsPreviewControl/Panel/MarginContainer/HBoxContainer"]
 layout_mode = 2
 text = "Money: $1000"
 
-[node name="HorizontalSpacer" parent="StatsMenuControl/Panel/MarginContainer/HBoxContainer" instance=ExtResource("2_4obur")]
+[node name="HorizontalSpacer" parent="StatsPreviewControl/Panel/MarginContainer/HBoxContainer" instance=ExtResource("2_4obur")]
 layout_mode = 2
 
-[node name="Label2" type="Label" parent="StatsMenuControl/Panel/MarginContainer/HBoxContainer"]
+[node name="Label2" type="Label" parent="StatsPreviewControl/Panel/MarginContainer/HBoxContainer"]
 layout_mode = 2
 text = "Sanity:"
 
-[node name="SanityProgressBar" type="ProgressBar" parent="StatsMenuControl/Panel/MarginContainer/HBoxContainer"]
+[node name="SanityProgressBar" type="ProgressBar" parent="StatsPreviewControl/Panel/MarginContainer/HBoxContainer"]
 custom_minimum_size = Vector2(200, 0)
 layout_mode = 2
 size_flags_vertical = 1
@@ -121,10 +121,10 @@ max_value = 1.0
 value = 1.0
 show_percentage = false
 
-[node name="HorizontalSpacer2" parent="StatsMenuControl/Panel/MarginContainer/HBoxContainer" instance=ExtResource("2_4obur")]
+[node name="HorizontalSpacer2" parent="StatsPreviewControl/Panel/MarginContainer/HBoxContainer" instance=ExtResource("2_4obur")]
 layout_mode = 2
 
-[node name="ShowStatsButton" type="Button" parent="StatsMenuControl/Panel/MarginContainer/HBoxContainer"]
+[node name="ShowStatsButton" type="Button" parent="StatsPreviewControl/Panel/MarginContainer/HBoxContainer"]
 layout_mode = 2
 text = "Show More"
 
@@ -256,6 +256,193 @@ layout_mode = 2
 size_flags_vertical = 8
 text = "Close"
 
+[node name="StatsMenu" type="Panel" parent="."]
+visible = false
+custom_minimum_size = Vector2(720, 720)
+offset_right = 720.0
+offset_bottom = 720.0
+
+[node name="ColorRect" type="ColorRect" parent="StatsMenu"]
+custom_minimum_size = Vector2(500, 500)
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -250.0
+offset_top = -250.0
+offset_right = 250.0
+offset_bottom = 250.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="MarginContainer" type="MarginContainer" parent="StatsMenu/ColorRect"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 20
+theme_override_constants/margin_right = 20
+theme_override_constants/margin_bottom = 20
+
+[node name="GridContainer" type="GridContainer" parent="StatsMenu/ColorRect/MarginContainer"]
+layout_mode = 2
+theme_override_constants/h_separation = 10
+columns = 2
+
+[node name="Label" type="Label" parent="StatsMenu/ColorRect/MarginContainer/GridContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+text = "Money:"
+horizontal_alignment = 2
+
+[node name="MoneyLabel" type="Label" parent="StatsMenu/ColorRect/MarginContainer/GridContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+text = "$1000"
+
+[node name="Label3" type="Label" parent="StatsMenu/ColorRect/MarginContainer/GridContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+text = "Income:"
+horizontal_alignment = 2
+
+[node name="IncomeLabel" type="Label" parent="StatsMenu/ColorRect/MarginContainer/GridContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+text = "$1000"
+
+[node name="Label5" type="Label" parent="StatsMenu/ColorRect/MarginContainer/GridContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+text = "Expenses:"
+horizontal_alignment = 2
+
+[node name="ExpensesLabel" type="Label" parent="StatsMenu/ColorRect/MarginContainer/GridContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+text = "$1000"
+
+[node name="Label7" type="Label" parent="StatsMenu/ColorRect/MarginContainer/GridContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+text = "Family 1 Respect:"
+horizontal_alignment = 2
+
+[node name="Fam1RespectProgressBar" type="ProgressBar" parent="StatsMenu/ColorRect/MarginContainer/GridContainer"]
+layout_mode = 2
+size_flags_vertical = 1
+theme_override_styles/background = SubResource("StyleBoxFlat_tgtnt")
+theme_override_styles/fill = SubResource("StyleBoxFlat_s57ym")
+min_value = -1.0
+max_value = 1.0
+show_percentage = false
+
+[node name="Label8" type="Label" parent="StatsMenu/ColorRect/MarginContainer/GridContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+text = "Family 2 Respect:"
+horizontal_alignment = 2
+
+[node name="Fam2RespectProgressBar" type="ProgressBar" parent="StatsMenu/ColorRect/MarginContainer/GridContainer"]
+layout_mode = 2
+size_flags_vertical = 1
+theme_override_styles/background = SubResource("StyleBoxFlat_tgtnt")
+theme_override_styles/fill = SubResource("StyleBoxFlat_s57ym")
+min_value = -1.0
+max_value = 1.0
+show_percentage = false
+
+[node name="Label11" type="Label" parent="StatsMenu/ColorRect/MarginContainer/GridContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+text = "Heat:"
+horizontal_alignment = 2
+
+[node name="HeatProgressBar" type="ProgressBar" parent="StatsMenu/ColorRect/MarginContainer/GridContainer"]
+layout_mode = 2
+size_flags_vertical = 1
+theme_override_styles/background = SubResource("StyleBoxFlat_tgtnt")
+theme_override_styles/fill = SubResource("StyleBoxFlat_s57ym")
+max_value = 1.0
+show_percentage = false
+
+[node name="Label12" type="Label" parent="StatsMenu/ColorRect/MarginContainer/GridContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+text = "Sanity:"
+horizontal_alignment = 2
+
+[node name="SanityProgressBar" type="ProgressBar" parent="StatsMenu/ColorRect/MarginContainer/GridContainer"]
+layout_mode = 2
+size_flags_vertical = 1
+theme_override_styles/background = SubResource("StyleBoxFlat_tgtnt")
+theme_override_styles/fill = SubResource("StyleBoxFlat_s57ym")
+max_value = 1.0
+show_percentage = false
+
+[node name="Label13" type="Label" parent="StatsMenu/ColorRect/MarginContainer/GridContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+text = "Street Smart:"
+horizontal_alignment = 2
+
+[node name="StreetSmartProgressBar" type="ProgressBar" parent="StatsMenu/ColorRect/MarginContainer/GridContainer"]
+layout_mode = 2
+size_flags_vertical = 1
+theme_override_styles/background = SubResource("StyleBoxFlat_tgtnt")
+theme_override_styles/fill = SubResource("StyleBoxFlat_s57ym")
+max_value = 1.0
+show_percentage = false
+
+[node name="Label9" type="Label" parent="StatsMenu/ColorRect/MarginContainer/GridContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 0
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+text = "Businesses:"
+horizontal_alignment = 2
+
+[node name="BusinessesLabel" type="Label" parent="StatsMenu/ColorRect/MarginContainer/GridContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+text = "Yeer"
+
+[node name="Label14" type="Label" parent="StatsMenu/ColorRect/MarginContainer/GridContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 0
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+text = "Rentals:"
+horizontal_alignment = 2
+
+[node name="RentalsLabel" type="Label" parent="StatsMenu/ColorRect/MarginContainer/GridContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+text = "Yeer"
+
+[node name="CloseButton" type="Button" parent="StatsMenu/ColorRect/MarginContainer"]
+layout_mode = 2
+size_flags_vertical = 8
+text = "Close"
+
 [node name="TriggerMenu" type="Panel" parent="."]
 visible = false
 custom_minimum_size = Vector2(720, 720)
@@ -317,4 +504,5 @@ text = "OK"
 [node name="EventTimer" type="Timer" parent="."]
 wait_time = 30.0
 
+[connection signal="pressed" from="StatsPreviewControl/Panel/MarginContainer/HBoxContainer/ShowStatsButton" to="." method="_on_show_stats_button_pressed"]
 [connection signal="timeout" from="EventTimer" to="." method="_on_event_timer_timeout"]

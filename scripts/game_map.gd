@@ -27,9 +27,21 @@ const Neighborhood = preload('res://scripts/neighborhood.gd')
 @onready var trigger_menu_options_button = $TriggerMenu/ColorRect/MarginContainer/VBoxContainer/OptionsButton
 @onready var trigger_menu_confirm_button = $TriggerMenu/ColorRect/MarginContainer/ConfirmButton
 @onready var event_timer = $EventTimer
-@onready var stats_menu_money_label = $StatsMenuControl/Panel/MarginContainer/HBoxContainer/MoneyLabel
-@onready var stats_menu_sanity_progress_bar = $StatsMenuControl/Panel/MarginContainer/HBoxContainer/SanityProgressBar
-@onready var stats_menu_show_stats_button = $StatsMenuControl/Panel/MarginContainer/HBoxContainer/ShowStatsButton
+@onready var stats_preview_money_label = $StatsPreviewControl/Panel/MarginContainer/HBoxContainer/MoneyLabel
+@onready var stats_preview_sanity_progress_bar = $StatsPreviewControl/Panel/MarginContainer/HBoxContainer/SanityProgressBar
+@onready var stats_preview_show_stats_button = $StatsPreviewControl/Panel/MarginContainer/HBoxContainer/ShowStatsButton
+@onready var stats_menu = $StatsMenu
+@onready var stats_menu_money_label = $StatsMenu/ColorRect/MarginContainer/GridContainer/MoneyLabel
+@onready var stats_menu_income_label = $StatsMenu/ColorRect/MarginContainer/GridContainer/IncomeLabel
+@onready var stats_menu_expenses_label = $StatsMenu/ColorRect/MarginContainer/GridContainer/ExpensesLabel
+@onready var stats_menu_fam_1_progress_bar = $StatsMenu/ColorRect/MarginContainer/GridContainer/Fam1RespectProgressBar
+@onready var stats_menu_fam_2_progress_bar = $StatsMenu/ColorRect/MarginContainer/GridContainer/Fam2RespectProgressBar
+@onready var stats_menu_heat_progress_bar = $StatsMenu/ColorRect/MarginContainer/GridContainer/HeatProgressBar
+@onready var stats_menu_sanity_progress_bar = $StatsMenu/ColorRect/MarginContainer/GridContainer/SanityProgressBar
+@onready var stats_menu_street_smart_progress_bar = $StatsMenu/ColorRect/MarginContainer/GridContainer/StreetSmartProgressBar
+@onready var stats_menu_businesses_label = $StatsMenu/ColorRect/MarginContainer/GridContainer/BusinessesLabel
+@onready var stats_menu_rentals_label = $StatsMenu/ColorRect/MarginContainer/GridContainer/RentalsLabel
+@onready var stats_menu_close_button = $StatsMenu/ColorRect/MarginContainer/CloseButton
 
 @onready var events = Events.new()
 
@@ -47,6 +59,8 @@ var _selected_neighborhood_index
 
 # Called when the node enters the scene tree for the first time.
 func _ready():
+	stats_menu_close_button.pressed.connect(stats_menu.hide)
+	
 	var multiplayer_unique_id = multiplayer.get_unique_id()
 	add_player(multiplayer_unique_id)
 	
@@ -60,10 +74,10 @@ func _ready():
 
 func _process(delta):
 	if players.get(local_player_multiplayer_unique_id):
-		stats_menu_money_label.text = '${0}'.format([
+		stats_preview_money_label.text = '${0}'.format([
 			players[local_player_multiplayer_unique_id].money
 		])
-		stats_menu_sanity_progress_bar.value = players[local_player_multiplayer_unique_id].sanity
+		stats_preview_sanity_progress_bar.value = players[local_player_multiplayer_unique_id].sanity
 
 
 func _create_or_load_save():
@@ -270,10 +284,16 @@ func _handle_stat_updates(stat_update, player: Player):
 		if typeof(stat_update.get('value')) == TYPE_STRING
 		else stat_update.get('value')
 	)
+	var limits = Constants.STATS_LIMITS.get(stat_name)
+	var new_value = clampf(
+		player.get(stat_name) + update_value,
+		limits.get('min'),
+		limits.get('max')
+	) if limits\
+		else player.get(stat_name) + update_value
 	if not (typeof(update_value) == TYPE_BOOL and update_value == false):
-		player.set(stat_name, player.get(stat_name) + update_value)
+		player.set(stat_name, new_value)
 		
-	var new_value = player.get(stat_name)
 	var change_text = (
 		'lost' if (
 			(typeof(new_value) == TYPE_ARRAY and old_value.size() > new_value.size())
@@ -448,3 +468,30 @@ func _on_event_timer_timeout():
 	trigger_event(players[local_player_multiplayer_unique_id])
 	if not trigger_menu.visible:
 		event_timer.start()
+
+
+func _show_stats_menu():
+	var player: Player = players[local_player_multiplayer_unique_id]
+	stats_menu_money_label.text = '${0}'.format([player.money])
+	stats_menu_income_label.text = '${0}'.format([_calculate_total_income()])
+	stats_menu_expenses_label.text = '${0}'.format([_calculate_total_expenses()])
+	stats_menu_fam_1_progress_bar.value = player.family_1_respect
+	stats_menu_fam_2_progress_bar.value = player.family_2_respect
+	stats_menu_heat_progress_bar.value = player.heat
+	stats_menu_sanity_progress_bar.value = player.sanity
+	stats_menu_street_smart_progress_bar.value = player.street_smart
+	stats_menu_businesses_label.text = ''
+	for business in player.businesses:
+		stats_menu_businesses_label.text += territories.get_child(
+			business.get('territory_index')
+		).stats.name + '\n'
+	stats_menu_rentals_label.text = ''
+	for territory_index in player.rentals:
+		stats_menu_rentals_label.text += territories.get_child(
+			territory_index
+		).stats.name + '\n'
+	stats_menu.show()
+
+
+func _on_show_stats_button_pressed():
+	_show_stats_menu()
