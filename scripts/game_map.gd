@@ -4,6 +4,7 @@ const Events = preload('res://resources/events.gd')
 const NeighborhoodStats = preload('res://resources/neighborhood_stats.gd')
 const Player = preload('res://resources/player.gd')
 const SaveGame = preload('res://resources/save_game.gd')
+const Constants = preload('res://scripts/constants.gd')
 const neighborhood_scene = preload('res://scenes/neighborhood.tscn')
 const Neighborhood = preload('res://scripts/neighborhood.gd')
 
