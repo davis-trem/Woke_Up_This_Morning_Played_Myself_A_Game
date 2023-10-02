@@ -95,6 +95,7 @@ var neighborhood_actions = [
 		else null),
 ];
 
+var start_new_game = false
 var players = {}
 var local_player_multiplayer_unique_id
 var _save_game: SaveGame
@@ -122,7 +123,7 @@ func _process(delta):
 
 
 func _create_or_load_save():
-	if SaveGame.save_exists():
+	if not start_new_game and SaveGame.save_exists():
 		_save_game = SaveGame.load_savegame() as SaveGame
 		events = _save_game.events
 		players = _save_game.players

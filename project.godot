@@ -11,7 +11,7 @@ config_version=5
 [application]
 
 config/name="Woke_Up_This_Morning_Played_Myself_A_Game"
-run/main_scene="res://screens/game_map.tscn"
+run/main_scene="res://screens/main_menu.tscn"
 config/features=PackedStringArray("4.0", "GL Compatibility")
 config/icon="res://icon.svg"
 
