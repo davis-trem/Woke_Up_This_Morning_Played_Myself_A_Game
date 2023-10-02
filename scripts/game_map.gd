@@ -4,8 +4,8 @@ const Events = preload('res://resources/events.gd')
 const NeighborhoodStats = preload('res://resources/neighborhood_stats.gd')
 const Player = preload('res://resources/player.gd')
 const SaveGame = preload('res://resources/save_game.gd')
-const Constants = preload('res://scripts/constants.gd')
 const neighborhood_scene = preload('res://scenes/neighborhood.tscn')
+const Constants = preload('res://scripts/constants.gd')
 const Neighborhood = preload('res://scripts/neighborhood.gd')
 
 @onready var territories = $TerritoryControl/Territories
@@ -48,10 +48,52 @@ const Neighborhood = preload('res://scripts/neighborhood.gd')
 
 @export var territory_count: int = 9
 
-enum NEIGHBORHOOD_ACTIONS {
+enum NEIGHBORHOOD_ACTION {
+	DO_CRIME,
+	GET_JOB,
+	QUIT_JOB,
 	RENT,
+	SABOTAGE_FAM_1,
+	SABOTAGE_FAM_2,
+	SELL_RENTAL,
+	SELL_BUSINESS,
 	START_BUSINESS,
+	WORK_FOR_FAM_1,
+	WORK_FOR_FAM_2,
 }
+
+var neighborhood_actions = [
+	func (p: Player, n: Neighborhood): return (
+		{'key': NEIGHBORHOOD_ACTION.RENT, 'label': 'Rent', 'disable': n.stats.rent > p.money}
+		if not p.rentals.has(n.get_index())
+		else {'key': NEIGHBORHOOD_ACTION.SELL_RENTAL, 'label': 'Sell rental'}),
+	func (p: Player, n: Neighborhood): return (
+		{'key': NEIGHBORHOOD_ACTION.START_BUSINESS,
+			'label': 'Start Business',
+			'disable': not p.rentals.has(n.get_index()) or n.stats.cost_to_start_business > p.money}
+		if p.businesses.find(func (b: Dictionary): return b.get('territory_index') == n.get_index()) == -1
+		else {'key': NEIGHBORHOOD_ACTION.SELL_BUSINESS, 'label': 'Sell business'}),
+	func (p: Player, n: Neighborhood): return (
+		{'key': NEIGHBORHOOD_ACTION.QUIT_JOB, 'label': 'Quit job'}
+		if p.job.get('territory_index') == n.get_index()
+		else {'key': NEIGHBORHOOD_ACTION.GET_JOB,
+			'label': 'Get job',
+			'disable': not p.rentals.has(n.get_index())}),
+	func (p: Player, n: Neighborhood): return {'key': NEIGHBORHOOD_ACTION.DO_CRIME,
+		'label': 'Do crime', 'disable': not p.rentals.has(n.get_index())},
+	func (p: Player, n: Neighborhood): return (
+		{'key': NEIGHBORHOOD_ACTION.WORK_FOR_FAM_1,
+			'label': 'Do work for Fam 1',
+			'disable': not p.rentals.has(n.get_index())}
+		if n.stats.family_1_ownership > 0
+		else null),
+	func (p: Player, n: Neighborhood): return (
+		{'key': NEIGHBORHOOD_ACTION.WORK_FOR_FAM_2,
+			'label': 'Do work for Fam 2',
+			'disable': not p.rentals.has(n.get_index())}
+		if n.stats.family_2_ownership > 0
+		else null),
+];
 
 var players = {}
 var local_player_multiplayer_unique_id
@@ -66,8 +108,6 @@ func _ready():
 	add_player(multiplayer_unique_id)
 	
 	neighborhood_menu_close_button.pressed.connect(_close_neighborhood_menu)
-	for action in NEIGHBORHOOD_ACTIONS:
-		neighborhood_menu_actions_button.get_popup().add_item(action)
 	neighborhood_menu_actions_button.get_popup().id_pressed.connect(_neighborhood_menu_action_selected)
 	_create_or_load_save()
 	event_timer.start()
@@ -170,13 +210,24 @@ func _draw_territories(size: int = territory_count, save_exist: bool = false):
 		territories.add_child(neighborhood)
 
 
+func _draw_neighborhood_menu_action_button_options(player: Player, neighborhood: Neighborhood):
+	neighborhood_menu_actions_button.get_popup().clear()
+	for action_func in neighborhood_actions:
+		var action = action_func.call(player, neighborhood)
+		if action != null:
+			neighborhood_menu_actions_button.get_popup().add_item(action.get('label'), action.get('key'))
+			if action.get('disable'):
+				var index = neighborhood_menu_actions_button.get_popup().get_item_index(action.get('key'))
+				neighborhood_menu_actions_button.get_popup().set_item_disabled(index, true)
+
+
 func _show_neighborhood_menu(neighborhood: Neighborhood):
+	var player: Player = players[local_player_multiplayer_unique_id]
+	
+	_draw_neighborhood_menu_action_button_options(player, neighborhood)
+	
 	_selected_neighborhood_index = neighborhood.get_index()
 	
-	neighborhood_menu_actions_button.get_popup().set_item_disabled(
-		0,
-		players[local_player_multiplayer_unique_id].rentals.has(_selected_neighborhood_index)
-	)
 	neighborhood_menu_name_label.text = neighborhood.stats.get('name')
 	neighborhood_menu_rent_label.text = 'Rent: ${0}'.format([neighborhood.stats.rent])
 	neighborhood_menu_business_start_label.text = 'Cost to Start Business: ${0}'.format([neighborhood.stats.cost_to_start_business])
@@ -196,16 +247,177 @@ func _close_neighborhood_menu():
 
 
 func _neighborhood_menu_action_selected(id):
-	var text = neighborhood_menu_actions_button.get_popup().get_item_text(id)
+	var player: Player = players[local_player_multiplayer_unique_id]
+	var neighborhood: Neighborhood = territories.get_child(_selected_neighborhood_index)
 	match id:
-		NEIGHBORHOOD_ACTIONS.RENT:
-			players[local_player_multiplayer_unique_id].rentals.append(_selected_neighborhood_index)
-			territories.get_child(_selected_neighborhood_index).status_label.text = 'Rented'
-			neighborhood_menu_status_label.text = 'Territory Rented'
-			neighborhood_menu_status_label.show()
-		NEIGHBORHOOD_ACTIONS.START_BUSINESS:
+		NEIGHBORHOOD_ACTION.DO_CRIME:
+			var heat_limits = Constants.STATS_LIMITS.get(Constants.PLAYER_HEAT)
+			var street_smart_limits = Constants.STATS_LIMITS.get(Constants.PLAYER_STREET_SMART)
+			var money = randi_range(1000, 3000)
+			var heat = snappedf(randf_range(0.1, 0.3), 0.01)
+			var street_smart = snappedf(randf_range(0.1, 0.3), 0.01)
+			
+			neighborhood_menu_status_label.text = 'You have {CHANGE} {DIFF} {STAT}'.format({
+				'CHANGE': 'gained',
+				'STAT': 'dollars',
+				'DIFF': money
+			}) + '\n'
+			neighborhood_menu_status_label.text += 'You have {CHANGE} {DIFF} {STAT}'.format({
+				'CHANGE': 'gained',
+				'STAT': 'heat',
+				'DIFF': heat
+			}) + '\n'
+			neighborhood_menu_status_label.text += 'You have {CHANGE} {DIFF} {STAT}'.format({
+				'CHANGE': 'gained',
+				'STAT': 'street smart',
+				'DIFF': street_smart
+			}) + '\n'
+			
+			player.money += money
+			player.heat = clampf(
+				player.heat + heat,
+				heat_limits.get('min'),
+				heat_limits.get('max')
+			)
+			player.street_smart = clampf(
+				player.street_smart + street_smart,
+				street_smart_limits.get('min'),
+				street_smart_limits.get('max')
+			)
+		NEIGHBORHOOD_ACTION.GET_JOB:
+			player.job = {'territory_index': _selected_neighborhood_index}
+		NEIGHBORHOOD_ACTION.QUIT_JOB:
+			player.job = {}
+		NEIGHBORHOOD_ACTION.RENT:
+			player.money -= neighborhood.stats.rent
+			player.rentals.append(_selected_neighborhood_index)
+			neighborhood.status_label.text = 'Rented'
+			neighborhood_menu_status_label.text = 'Territory rented for ${AMOUNT}'.format({
+				'AMOUNT': neighborhood.stats.rent
+			})
+		NEIGHBORHOOD_ACTION.SABOTAGE_FAM_1:
 			pass
-	trigger_event(players[local_player_multiplayer_unique_id])
+		NEIGHBORHOOD_ACTION.SABOTAGE_FAM_2:
+			pass
+		NEIGHBORHOOD_ACTION.SELL_RENTAL:
+			player.rentals = player.rentals.filter(func (i): return i != _selected_neighborhood_index)
+			player.money += neighborhood.stats.rent
+			neighborhood.status_label.text = ''
+			neighborhood_menu_status_label.text = 'Rental sold for ${AMOUNT}'.format({
+				'AMOUNT': neighborhood.stats.rent
+			})
+		NEIGHBORHOOD_ACTION.SELL_BUSINESS:
+			var index = player.businesses.find(
+				func (b): return b.get('territory_index') == _selected_neighborhood_index
+			)
+			player.businesses.pop_at(index)
+			player.money += neighborhood.stats.cost_to_start_business
+			neighborhood_menu_status_label.text = 'Business sold for ${AMOUNT}'.format({
+				'AMOUNT': neighborhood.stats.cost_to_start_business
+			})
+		NEIGHBORHOOD_ACTION.START_BUSINESS:
+			player.money -= neighborhood.stats.cost_to_start_business
+			player.businesses.append({'territory_index': _selected_neighborhood_index})
+			neighborhood_menu_status_label.text = 'Business started for ${AMOUNT}'.format({
+				'AMOUNT': neighborhood.stats.cost_to_start_business
+			})
+		NEIGHBORHOOD_ACTION.WORK_FOR_FAM_1:
+			var respect_limits = Constants.STATS_LIMITS.get(Constants.PLAYER_FAMILY_1_RESPECT)
+			var heat_limits = Constants.STATS_LIMITS.get(Constants.PLAYER_HEAT)
+			var street_smart_limits = Constants.STATS_LIMITS.get(Constants.PLAYER_STREET_SMART)
+			var respect = 0.1
+			var money = randi_range(3000, 5000)
+			var heat = snappedf(randf_range(0.2, 0.5), 0.01)
+			var street_smart = snappedf(randf_range(0.1, 0.3), 0.01)
+			
+			neighborhood_menu_status_label.text = 'You have {CHANGE} {DIFF} {STAT}'.format({
+				'CHANGE': 'gained',
+				'STAT': 'dollars',
+				'DIFF': money
+			}) + '\n'
+			neighborhood_menu_status_label.text += 'You have {CHANGE} {DIFF} {STAT}'.format({
+				'CHANGE': 'gained',
+				'STAT': 'family_1_respect',
+				'DIFF': respect
+			}) + '\n'
+			neighborhood_menu_status_label.text += 'You have {CHANGE} {DIFF} {STAT}'.format({
+				'CHANGE': 'gained',
+				'STAT': 'heat',
+				'DIFF': heat
+			}) + '\n'
+			neighborhood_menu_status_label.text += 'You have {CHANGE} {DIFF} {STAT}'.format({
+				'CHANGE': 'gained',
+				'STAT': 'street smart',
+				'DIFF': street_smart
+			}) + '\n'
+			
+			player.family_1_respect = clampf(
+				player.family_1_respect + respect,
+				respect_limits.get('min'),
+				respect_limits.get('max')
+			)
+			player.money += money
+			player.heat = clampf(
+				player.heat + heat,
+				heat_limits.get('min'),
+				heat_limits.get('max')
+			)
+			player.street_smart = clampf(
+				player.street_smart + street_smart,
+				street_smart_limits.get('min'),
+				street_smart_limits.get('max')
+			)
+		NEIGHBORHOOD_ACTION.WORK_FOR_FAM_2:
+			var respect_limits = Constants.STATS_LIMITS.get(Constants.PLAYER_FAMILY_2_RESPECT)
+			var heat_limits = Constants.STATS_LIMITS.get(Constants.PLAYER_HEAT)
+			var street_smart_limits = Constants.STATS_LIMITS.get(Constants.PLAYER_STREET_SMART)
+			var respect = 0.1
+			var money = randi_range(2500, 4000)
+			var heat = snappedf(randf_range(0.2, 0.4), 0.01)
+			var street_smart = snappedf(randf_range(0.1, 0.3), 0.01)
+			
+			neighborhood_menu_status_label.text = 'You have {CHANGE} {DIFF} {STAT}'.format({
+				'CHANGE': 'gained',
+				'STAT': 'dollars',
+				'DIFF': money
+			}) + '\n'
+			neighborhood_menu_status_label.text += 'You have {CHANGE} {DIFF} {STAT}'.format({
+				'CHANGE': 'gained',
+				'STAT': 'family_1_respect',
+				'DIFF': respect
+			}) + '\n'
+			neighborhood_menu_status_label.text += 'You have {CHANGE} {DIFF} {STAT}'.format({
+				'CHANGE': 'gained',
+				'STAT': 'heat',
+				'DIFF': heat
+			}) + '\n'
+			neighborhood_menu_status_label.text += 'You have {CHANGE} {DIFF} {STAT}'.format({
+				'CHANGE': 'gained',
+				'STAT': 'street smart',
+				'DIFF': street_smart
+			}) + '\n'
+			
+			player.family_2_respect = clampf(
+				player.family_2_respect + respect,
+				respect_limits.get('min'),
+				respect_limits.get('max')
+			)
+			player.money += money
+			player.heat = clampf(
+				player.heat + heat,
+				heat_limits.get('min'),
+				heat_limits.get('max')
+			)
+			player.street_smart = clampf(
+				player.street_smart + street_smart,
+				street_smart_limits.get('min'),
+				street_smart_limits.get('max')
+			)
+	
+	neighborhood_menu_status_label.show()
+	_draw_neighborhood_menu_action_button_options(player, neighborhood)
+#	TODO: figure out if we wanna trigger event after selecting neighborhood option
+#	trigger_event(player)
 	_save_game.write_savegame()
 
 
