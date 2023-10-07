@@ -1,4 +1,4 @@
-extends Node2D
+extends Control
 
 const game_map_scene = preload('res://screens/game_map.tscn')
 
