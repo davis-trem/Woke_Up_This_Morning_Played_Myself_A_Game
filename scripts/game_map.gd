@@ -31,6 +31,7 @@ const Neighborhood = preload('res://scripts/neighborhood.gd')
 @onready var stats_preview_money_label = $StatsPreviewControl/Panel/MarginContainer/HBoxContainer/MoneyLabel
 @onready var stats_preview_sanity_progress_bar = $StatsPreviewControl/Panel/MarginContainer/HBoxContainer/SanityProgressBar
 @onready var stats_preview_show_stats_button = $StatsPreviewControl/Panel/MarginContainer/HBoxContainer/ShowStatsButton
+@onready var stats_preview_expenses_countdown_progress_bar = $StatsPreviewControl/Panel/MarginContainer/HBoxContainer/ExpensesCountdownProgressBar
 @onready var stats_menu = $StatsMenu
 @onready var stats_menu_money_label = $StatsMenu/ColorRect/MarginContainer/GridContainer/MoneyLabel
 @onready var stats_menu_income_label = $StatsMenu/ColorRect/MarginContainer/GridContainer/IncomeLabel
@@ -120,6 +121,8 @@ func _process(delta):
 			players[local_player_multiplayer_unique_id].money
 		])
 		stats_preview_sanity_progress_bar.value = players[local_player_multiplayer_unique_id].sanity
+	
+	stats_preview_expenses_countdown_progress_bar.value = event_timer.time_left / event_timer.wait_time
 
 
 func _create_or_load_save():
