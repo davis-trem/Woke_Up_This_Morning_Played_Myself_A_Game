@@ -1,4 +1,4 @@
-extends Node2D
+extends Control
 
 const Events = preload('res://resources/events.gd')
 const NeighborhoodStats = preload('res://resources/neighborhood_stats.gd')
