@@ -70,13 +70,21 @@ enum NEIGHBORHOOD_ACTION {
 
 var neighborhood_actions = [
 	func (p: Player, n: Neighborhood): return (
-		{'key': NEIGHBORHOOD_ACTION.RENT, 'label': 'Rent', 'disable': n.stats.rent > p.money}
+		{'key': NEIGHBORHOOD_ACTION.RENT,
+			'label': 'Rent',
+			'disable': n.stats.rent > p.money,
+			'tooltip': tr('cannot_afford')}
 		if not p.rentals.has(n.get_index())
 		else {'key': NEIGHBORHOOD_ACTION.SELL_RENTAL, 'label': 'Sell rental'}),
 	func (p: Player, n: Neighborhood): return (
 		{'key': NEIGHBORHOOD_ACTION.START_BUSINESS,
 			'label': 'Start Business',
-			'disable': not p.rentals.has(n.get_index()) or n.stats.cost_to_start_business > p.money}
+			'disable': not p.rentals.has(n.get_index()) or n.stats.cost_to_start_business > p.money,
+			'tooltip': (
+				tr('cannot_afford')
+				if n.stats.cost_to_start_business > p.money
+				else tr('rental_needed')
+			)}
 		if p.businesses.find(func (b: Dictionary): return b.get('territory_index') == n.get_index()) == -1
 		else {'key': NEIGHBORHOOD_ACTION.SELL_BUSINESS, 'label': 'Sell business'}),
 	func (p: Player, n: Neighborhood): return (
@@ -84,19 +92,25 @@ var neighborhood_actions = [
 		if p.job.get('territory_index') == n.get_index()
 		else {'key': NEIGHBORHOOD_ACTION.GET_JOB,
 			'label': 'Get job',
-			'disable': not p.rentals.has(n.get_index())}),
-	func (p: Player, n: Neighborhood): return {'key': NEIGHBORHOOD_ACTION.DO_CRIME,
-		'label': 'Do crime', 'disable': not p.rentals.has(n.get_index())},
+			'disable': not p.rentals.has(n.get_index()),
+			'tooltip': tr('rental_needed')}),
+	func (p: Player, n: Neighborhood): return {
+		'key': NEIGHBORHOOD_ACTION.DO_CRIME,
+		'label': 'Do crime',
+		'disable': not p.rentals.has(n.get_index()),
+		'tooltip': tr('rental_needed')},
 	func (p: Player, n: Neighborhood): return (
 		{'key': NEIGHBORHOOD_ACTION.WORK_FOR_FAM_1,
 			'label': 'Do work for Fam 1',
-			'disable': not p.rentals.has(n.get_index())}
+			'disable': not p.rentals.has(n.get_index()),
+			'tooltip': tr('rental_needed')}
 		if n.stats.family_1_ownership > 0
 		else null),
 	func (p: Player, n: Neighborhood): return (
 		{'key': NEIGHBORHOOD_ACTION.WORK_FOR_FAM_2,
 			'label': 'Do work for Fam 2',
-			'disable': not p.rentals.has(n.get_index())}
+			'disable': not p.rentals.has(n.get_index()),
+			'tooltip': tr('rental_needed')}
 		if n.stats.family_2_ownership > 0
 		else null),
 ];
@@ -244,6 +258,8 @@ func _draw_neighborhood_menu_action_button_options(player: Player, neighborhood:
 			if action.get('disable'):
 				var index = neighborhood_menu_actions_button.get_popup().get_item_index(action.get('key'))
 				neighborhood_menu_actions_button.get_popup().set_item_disabled(index, true)
+				if action.get('tooltip'):
+					neighborhood_menu_actions_button.get_popup().set_item_tooltip(index, action.get('tooltip'))
 
 
 func _show_neighborhood_menu(neighborhood: Neighborhood):

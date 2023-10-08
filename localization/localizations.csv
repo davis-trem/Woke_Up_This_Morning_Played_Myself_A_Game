@@ -10,3 +10,5 @@ cannot_afford_businesses,Businesses {businesses} closed because you did not have
 rental_expenses,Lost ${expense} paying rent for {rentals},
 businesses_expenses,Lost ${expense} paying upkeep for businesses in {businesses},
 lost_sanity_because_homeless,Lost {amount} sanity because you are homeless,
+cannot_afford,Do not have enough money,
+rental_needed,Must rent this location to do this,
