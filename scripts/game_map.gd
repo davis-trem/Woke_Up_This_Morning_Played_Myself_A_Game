@@ -44,6 +44,9 @@ const Neighborhood = preload('res://scripts/neighborhood.gd')
 @onready var stats_menu_businesses_label = $StatsMenu/ColorRect/MarginContainer/GridContainer/BusinessesLabel
 @onready var stats_menu_rentals_label = $StatsMenu/ColorRect/MarginContainer/GridContainer/RentalsLabel
 @onready var stats_menu_close_button = $StatsMenu/ColorRect/MarginContainer/CloseButton
+@onready var status_notifier = $StatusNotifier
+@onready var status_notifier_details_label = $StatusNotifier/MarginContainer/ColorRect/MarginContainer/VBoxContainer/DetailsLabel
+@onready var status_notifier_continue_button = $StatusNotifier/MarginContainer/ColorRect/MarginContainer/VBoxContainer/ContinueButton
 @onready var dev_menu = $DevMenu
 @onready var dev_menu_trigger_button = $DevMenu/MarginContainer/ColorRect/MenuButton
 
@@ -616,7 +619,7 @@ func _evaluateString(command: String, player):
 	return ref.eval(player)
 
 
-func _calculate_total_expenses():
+func _calculate_total_expenses_amount() -> int:
 	var player: Player = players[local_player_multiplayer_unique_id]
 	
 	var total_rent = 0
@@ -637,16 +640,19 @@ func _calculate_total_expenses():
 	return total_rent + total_business_costs + total_loan_payments
 
 
-func _apply_expenses():
+func _calculate_total_expenses() -> Dictionary:
 	var player: Player = players[local_player_multiplayer_unique_id]
 	
-	var cannot_afford = {'rentals': [], 'businesses': []}
+	var cannot_afford_rentals = []
+	var cannot_afford_businesses = []
+	var rental_expenses = 0
+	var businesses_expenses = 0
 	for territory_index in player.rentals:
 		var rent = territories.get_child(territory_index).stats.rent
 		if player.money >= rent:
-			player.money -= rent
+			rental_expenses += rent
 		else:
-			cannot_afford['rentals'].append(territory_index)
+			cannot_afford_rentals.append(territory_index)
 		# Check if owns business in territory
 		for business in player.businesses:
 			if business.get('territory_index') == territory_index:
@@ -656,26 +662,37 @@ func _apply_expenses():
 				
 				# if cannot afford rent then cannot keep business
 				if (
-					cannot_afford.get('rentals').find(territory_index) == -1
+					cannot_afford_rentals.find(territory_index) == -1
 					and player.money >= business_cost
 				):
-					player.money -= business_cost
+					businesses_expenses += business_cost
 				else:
-					cannot_afford['businesses'].append(territory_index)
+					cannot_afford_businesses.append(territory_index)
 	
-	for territory_index in cannot_afford.get('rentals'):
+	for territory_index in cannot_afford_rentals:
 		player.rentals = player.rentals.filter(func (ti): ti != territory_index)
 	
-	for territory_index in cannot_afford.get('businesses'):
+	for territory_index in cannot_afford_businesses:
 		player.businesses = player.businesses.filter(
 			func (b): b.get('territory_index') != territory_index
 		)
 	
 	for loan in player.loans:
 		pass # TODO
+	
+	return {
+		'cannot_afford': {
+			'retails': cannot_afford_rentals,
+			'businesses': cannot_afford_businesses,
+		},
+		'expenses': {
+			'rental_expenses': rental_expenses,
+			'businesses_expenses': businesses_expenses
+		}
+	}
 
 
-func _calculate_total_income():
+func _calculate_total_income() -> Dictionary:
 	var player: Player = players[local_player_multiplayer_unique_id]
 	
 	var job_payout = 0
@@ -695,33 +712,111 @@ func _calculate_total_income():
 	if player.family_2_respect >= 0.7:
 		pass # TODO
 	
-	return job_payout + total_business_payout + fam_1_payout + fam_2_payout
+	return {
+		'job_payout': job_payout,
+		'total_business_payout':total_business_payout,
+		'fam_1_payout': fam_1_payout,
+		'fam_2_payout': fam_2_payout
+	}
+
+
+func _notify_status_updates():
+	var player: Player = players[local_player_multiplayer_unique_id]
+	
+	var total_income := _calculate_total_income()
+	for key in total_income:
+		if total_income[key] > 0:
+			player.money + total_income[key]
+			status_notifier_details_label.text += tr(key).format({
+				'payout': total_income[key],
+				'businesses': ', '.join(
+					player.businesses.map(
+						func(b): return territories.get_child(b.get('territory_index')).stats.name
+					)
+				),
+				'fam_1': 'fam_1',
+				'fam_2': 'fam_2'
+			}) + '\n'
+	status_notifier_details_label.text += '\n'
+	
+	var total_expenses := _calculate_total_expenses()
+	var cannot_afford_details = ''
+	if total_expenses.get('cannot_afford').get('retails').size() > 0:
+		player.rentals = player.rentals.filter(
+			func (ti): !total_expenses.get('cannot_afford').get('retails').has(ti)
+		)
+		# Update board to show as no longer rented
+		for territory_index in total_expenses.get('cannot_afford').get('retails'):
+			territories.get_child(territory_index).status_label = ''
+		cannot_afford_details += tr('cannot_afford_retails').format({
+			'rentals': ', '.join(total_expenses.get('cannot_afford').get('retails').map(
+				func (ti): return territories.get_child(ti).stats.name
+			))
+		}) + '\n'
+	if total_expenses.get('cannot_afford').get('businesses').size() > 0:
+		player.businesses = player.businesses.filter(
+			func (b): !total_expenses.get('cannot_afford').get('businesses').has(b.get('territory_index'))
+		)
+		cannot_afford_details += tr('cannot_afford_businesses').format({
+			'businesses': ', '.join(total_expenses.get('cannot_afford').get('businesses').map(
+				func (b): return territories.get_child(b.get('territory_index')).stats.name
+			))
+		}) + '\n'
+	
+	for key in total_expenses.get('expenses'):
+		if total_expenses.get('expenses')[key] > 0:
+			player.money -= total_expenses.get('expenses').get(key)
+			status_notifier_details_label.text += tr(key).format({
+				'expense': total_expenses.get('expenses').get(key),
+				'rentals': ', '.join(player.rentals.map(
+					func (ti): return territories.get_child(ti).stats.name
+				)),
+				'businesses': ', '.join(player.businesses.map(
+					func (b): return territories.get_child(b.get('territory_index')).stats.name
+				))
+			}) + '\n'
+	status_notifier_details_label.text += cannot_afford_details + '\n'
+	
+	
+	if player.rentals.size() == 0:
+		player.sanity -= 0.3
+		status_notifier_details_label.text += tr('lost_sanity_because_homeless')\
+			.format({'amount': 0.3}) + '\n\n'
+	
+	if player.sanity <= 0:
+		status_notifier_details_label.text += tr('player_died')
+
+	_save_game.write_savegame()
+	
+	status_notifier_continue_button.pressed.connect(
+		func():
+			status_notifier.hide()
+			status_notifier_details_label.text = ''
+			if player.sanity <= 0:
+				print('player ends')
+			else:
+				trigger_event(player)
+	)
+	if player.sanity < 0:
+		print('player ends')
+	
+	
+	status_notifier.show()
 
 
 func _on_event_timer_timeout():
 	event_timer.stop()
-	var player: Player = players[local_player_multiplayer_unique_id]
-	player.money += _calculate_total_income()
-	_apply_expenses()
-
-	if player.rentals.size() == 0:
-		player.sanity -= 0.3
-
-	if player.sanity < 0:
-		print('player ends')
 	
-	_save_game.write_savegame()
-
-	trigger_event(players[local_player_multiplayer_unique_id])
-	if not trigger_menu.visible:
-		event_timer.start()
+	_notify_status_updates()
 
 
 func _show_stats_menu():
 	var player: Player = players[local_player_multiplayer_unique_id]
 	stats_menu_money_label.text = '${0}'.format([player.money])
-	stats_menu_income_label.text = '${0}'.format([_calculate_total_income()])
-	stats_menu_expenses_label.text = '${0}'.format([_calculate_total_expenses()])
+	stats_menu_income_label.text = '${0}'.format([
+		_calculate_total_income().values().reduce(func(total, num): return total + num, 0)
+	])
+	stats_menu_expenses_label.text = '${0}'.format([_calculate_total_expenses_amount()])
 	stats_menu_fam_1_progress_bar.value = player.family_1_respect
 	stats_menu_fam_2_progress_bar.value = player.family_2_respect
 	stats_menu_heat_progress_bar.value = player.heat

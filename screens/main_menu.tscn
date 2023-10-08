@@ -51,12 +51,12 @@ size_flags_vertical = 3
 [node name="NewGameButton" type="Button" parent="ColorRect/MarginContainer/VBoxContainer/VBoxContainer"]
 layout_mode = 2
 size_flags_vertical = 3
-text = "main.menu.new.game.button"
+text = "main_menu_new_game_button"
 
 [node name="ResumeButton" type="Button" parent="ColorRect/MarginContainer/VBoxContainer/VBoxContainer"]
 layout_mode = 2
 size_flags_vertical = 3
-text = "main.menu.resume.button"
+text = "main_menu_resume_button"
 
 [connection signal="pressed" from="ColorRect/MarginContainer/VBoxContainer/VBoxContainer/NewGameButton" to="." method="_on_new_game_button_pressed"]
 [connection signal="pressed" from="ColorRect/MarginContainer/VBoxContainer/VBoxContainer/ResumeButton" to="." method="_on_resume_button_pressed"]

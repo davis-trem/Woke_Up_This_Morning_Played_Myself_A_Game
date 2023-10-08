@@ -1,3 +1,12 @@
 keys,en,es
-main.menu.new.game.button,New Game,Neuva Juego
-main.menu.resume.button,Resume,Resume
+main_menu_new_game_button,New Game,Neuva Juego
+main_menu_resume_button,Resume,Resume
+job_payout,Received ${payout} from job,
+total_business_payout,Received ${payout} from businesses in {businesses},
+fam_1_payout,Received ${payout} from {fam_1},
+fam_2_payout,Received ${payout} from {fam_2},
+cannot_afford_retails,Evicted from rentals {rentals} because you did not have enough to afford it,
+cannot_afford_businesses,Businesses {businesses} closed because you did not have enough to keep it running,
+rental_expenses,Lost ${expense} paying rent for {rentals},
+businesses_expenses,Lost ${expense} paying upkeep for businesses in {businesses},
+lost_sanity_because_homeless,Lost {amount} sanity because you are homeless,
