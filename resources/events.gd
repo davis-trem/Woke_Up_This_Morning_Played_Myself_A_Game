@@ -706,7 +706,7 @@ const Constants = preload('res://scripts/constants.gd')
 				'action': 'served time',
 				'chance': 1,
 				'stat_updates': [
-					{'name': Constants.PLAYER_STREET_SMART, 'value': 'return p.heat * 0.5'},
+					{'name': Constants.PLAYER_STREET_SMART, 'value': 'return clampf(0.2, p.heat, p.heat) * 0.5'},
 					{'name': Constants.PLAYER_RENTALS, 'value': 'p.rentals = p.rentals.duplicate().slice(0, clampi(2 - ceili(p.heat * 10), -p.rentals.size(), 0)) if p.rentals.size() > 0 and p.heat > 0.4 else p.rentals; return false'},
 					{'name': Constants.PLAYER_BUSINESSES, 'value': 'p[Constants.PLAYER_BUSINESSES] = [] if p.heat >= 0.2 else p.businesses; return false'},
 				]

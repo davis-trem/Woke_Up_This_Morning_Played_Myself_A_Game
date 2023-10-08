@@ -44,6 +44,8 @@ const Neighborhood = preload('res://scripts/neighborhood.gd')
 @onready var stats_menu_businesses_label = $StatsMenu/ColorRect/MarginContainer/GridContainer/BusinessesLabel
 @onready var stats_menu_rentals_label = $StatsMenu/ColorRect/MarginContainer/GridContainer/RentalsLabel
 @onready var stats_menu_close_button = $StatsMenu/ColorRect/MarginContainer/CloseButton
+@onready var dev_menu = $DevMenu
+@onready var dev_menu_trigger_button = $DevMenu/MarginContainer/ColorRect/MenuButton
 
 @onready var events = Events.new()
 
@@ -112,6 +114,18 @@ func _ready():
 	neighborhood_menu_close_button.pressed.connect(_close_neighborhood_menu)
 	neighborhood_menu_actions_button.get_popup().id_pressed.connect(_neighborhood_menu_action_selected)
 	_create_or_load_save()
+	
+	for type in events.triggers:
+		dev_menu_trigger_button.get_popup().add_item(type)
+	dev_menu_trigger_button.get_popup().id_pressed.connect(
+		func (index):
+			dev_menu.hide()
+			trigger_event(
+				players[multiplayer_unique_id],
+				dev_menu_trigger_button.get_popup().get_item_text(index)
+			)
+	)
+	
 	event_timer.start()
 
 
@@ -123,6 +137,10 @@ func _process(delta):
 		stats_preview_sanity_progress_bar.value = players[local_player_multiplayer_unique_id].sanity
 	
 	stats_preview_expenses_countdown_progress_bar.value = event_timer.time_left / event_timer.wait_time
+	
+	if not dev_menu.visible and Input.is_action_pressed('show_dev_menu'):
+		event_timer.stop()
+		dev_menu.show()
 
 
 func _create_or_load_save():
@@ -501,14 +519,19 @@ func _handle_stat_updates(stat_update, player: Player):
 		if typeof(stat_update.get('value')) == TYPE_STRING
 		else stat_update.get('value')
 	)
-	var limits = Constants.STATS_LIMITS.get(stat_name)
-	var new_value = clampf(
-		player.get(stat_name) + update_value,
-		limits.get('min'),
-		limits.get('max')
-	) if limits\
-		else player.get(stat_name) + update_value
-	if not (typeof(update_value) == TYPE_BOOL and update_value == false):
+	
+	var new_value
+	if typeof(update_value) == TYPE_BOOL and update_value == false:
+		new_value = player.get(stat_name)
+	else:
+		var limits = Constants.STATS_LIMITS.get(stat_name)
+		new_value = clampf(
+			player.get(stat_name) + update_value,
+			limits.get('min'),
+			limits.get('max')
+		) if limits\
+			else player.get(stat_name) + update_value
+		
 		player.set(stat_name, new_value)
 		
 	var change_text = (
@@ -535,19 +558,26 @@ func _hide_trigger_menu():
 
 
 func _trigger_menu_option_selected(selected_id, options, player):
-	trigger_menu_description_label.text = ''
+	trigger_menu_description_label.text =\
+		trigger_menu_options_button.get_popup().get_item_text(selected_id)
 	trigger_menu_status_label.text = ''
 	trigger_menu_options_button.hide()
 	var text = trigger_menu_options_button.get_popup().get_item_text(selected_id)
 	for option in options:
 		# Found selected event option
 		if text == option.get('type'):
+			var continue_func = ((func (): trigger_event(player, option.get('trigger')))
+				if option.get('trigger')
+				else _hide_trigger_menu)
+			
+			# If there isn't any stats to show then go straight to trigger/menu close
+			if option.get('stat_updates', []).size() == 0:
+				continue_func.call()
+				return
+			
 			for stat_update in option.get('stat_updates', []):
 				_handle_stat_updates(stat_update, player)
-			trigger_menu_confirm_button.pressed.connect(
-				(func (): trigger_event(player, option.get('trigger'))) if option.get('trigger')
-				else _hide_trigger_menu
-			)
+			trigger_menu_confirm_button.pressed.connect(continue_func)
 			trigger_menu_confirm_button.show()
 			_save_game.write_savegame()
 			return
