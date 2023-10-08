@@ -1,3 +1,4 @@
 # Godot 4+ specific ignores
 .godot/
 build/
+localization/.~lock.localizations.csv#

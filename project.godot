@@ -32,6 +32,10 @@ version_control/autoload_on_startup=true
 
 enabled=PackedStringArray("res://addons/gut/plugin.cfg")
 
+[internationalization]
+
+locale/translations=PackedStringArray("res://localization/localizations.en.translation", "res://localization/localizations.es.translation")
+
 [rendering]
 
 renderer/rendering_method="gl_compatibility"
