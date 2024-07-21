@@ -8,7 +8,7 @@ const Player = preload('res://resources/player.gd')
 const SAVE_GAME_PATH = 'user://save.tres'
 
 @export var version = 1
-@export var players: Dictionary
+@export var player: Player
 @export var events: Events
 @export var neighoborhood_stats_list: Array[NeighborhoodStats] = []
 

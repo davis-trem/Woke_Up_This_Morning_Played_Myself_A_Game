@@ -116,17 +116,13 @@ var neighborhood_actions = [
 ];
 
 var start_new_game = false
-var players = {}
-var local_player_multiplayer_unique_id
+var player: Player
 var _save_game: SaveGame
 var _selected_neighborhood_index
 
 # Called when the node enters the scene tree for the first time.
 func _ready():
 	stats_menu_close_button.pressed.connect(stats_menu.hide)
-	
-	var multiplayer_unique_id = multiplayer.get_unique_id()
-	add_player(multiplayer_unique_id)
 	
 	neighborhood_menu_close_button.pressed.connect(_close_neighborhood_menu)
 	neighborhood_menu_actions_button.get_popup().id_pressed.connect(_neighborhood_menu_action_selected)
@@ -138,7 +134,6 @@ func _ready():
 		func (index):
 			dev_menu.hide()
 			trigger_event(
-				players[multiplayer_unique_id],
 				dev_menu_trigger_button.get_popup().get_item_text(index)
 			)
 	)
@@ -147,11 +142,11 @@ func _ready():
 
 
 func _process(delta):
-	if players.get(local_player_multiplayer_unique_id):
+	if player:
 		stats_preview_money_label.text = '${0}'.format([
-			players[local_player_multiplayer_unique_id].money
+			player.money
 		])
-		stats_preview_sanity_progress_bar.value = players[local_player_multiplayer_unique_id].sanity
+		stats_preview_sanity_progress_bar.value = player.sanity
 	
 	stats_preview_expenses_countdown_progress_bar.value = event_timer.time_left / event_timer.wait_time
 	
@@ -164,45 +159,38 @@ func _create_or_load_save():
 	if not start_new_game and SaveGame.save_exists():
 		_save_game = SaveGame.load_savegame() as SaveGame
 		events = _save_game.events
-		players = _save_game.players
+		player = _save_game.player
 		_draw_territories(_save_game.neighoborhood_stats_list.size(), true)
 	else:
 		_save_game = SaveGame.new()
-		_save_game.players = players
+		player = Player.new()
+		_save_game.player = player
 		_save_game.events = events
 		_draw_territories()
 		_assign_player_to_neiborhood()
 		_save_game.write_savegame()
 
 
-func add_player(peer_id):
-	set_multiplayer_authority(peer_id)
-	players[peer_id] = Player.new()
-	players[peer_id].id = peer_id
-	if peer_id == multiplayer.get_unique_id():
-		local_player_multiplayer_unique_id = peer_id
-
-
 func _assign_player_to_neiborhood():
 	var territory_index = randi() % territories.get_child_count()
 	
-	players[local_player_multiplayer_unique_id].rentals.append(territory_index)
+	player.rentals.append(territory_index)
 	territories.get_child(territory_index).status_label.text = 'Rented'
 	
 	if territories.get_child(territory_index).stats.family_1_ownership >= 0.8:
-		players[local_player_multiplayer_unique_id].money = 5000
-		players[local_player_multiplayer_unique_id].street_smart = 0.3
-		players[local_player_multiplayer_unique_id].heat = 0.2
-		players[local_player_multiplayer_unique_id].family_1_respect = 0.2
-		players[local_player_multiplayer_unique_id].family_2_respect = -0.2
+		player.money = 5000
+		player.street_smart = 0.3
+		player.heat = 0.2
+		player.family_1_respect = 0.2
+		player.family_2_respect = -0.2
 	elif territories.get_child(territory_index).stats.family_2_ownership >= 0.8:
-		players[local_player_multiplayer_unique_id].money = 10000
-		players[local_player_multiplayer_unique_id].street_smart = 0.2
-		players[local_player_multiplayer_unique_id].heat = 0.1
-		players[local_player_multiplayer_unique_id].family_1_respect = 0.2
-		players[local_player_multiplayer_unique_id].family_2_respect = -0.3
+		player.money = 10000
+		player.street_smart = 0.2
+		player.heat = 0.1
+		player.family_1_respect = 0.2
+		player.family_2_respect = -0.3
 	else:
-		players[local_player_multiplayer_unique_id].money = 50000
+		player.money = 50000
 
 
 func _draw_territories(size: int = territory_count, save_exist: bool = false):
@@ -212,10 +200,10 @@ func _draw_territories(size: int = territory_count, save_exist: bool = false):
 		
 		if save_exist:
 			neighborhood.stats = _save_game.neighoborhood_stats_list[i]
-			if players[local_player_multiplayer_unique_id].rentals.has(i):
+			if player.rentals.has(i):
 				neighborhood.initial_status_label_text = 'Rented'
 		else:
-			players[local_player_multiplayer_unique_id].territories_respect.append(0)
+			player.territories_respect.append(0)
 			
 			neighborhood.stats = NeighborhoodStats.new()
 			neighborhood.stats.name = 'Yeer{0}'.format([i])
@@ -249,7 +237,7 @@ func _draw_territories(size: int = territory_count, save_exist: bool = false):
 		territories.add_child(neighborhood)
 
 
-func _draw_neighborhood_menu_action_button_options(player: Player, neighborhood: Neighborhood):
+func _draw_neighborhood_menu_action_button_options(neighborhood: Neighborhood):
 	neighborhood_menu_actions_button.get_popup().clear()
 	for action_func in neighborhood_actions:
 		var action = action_func.call(player, neighborhood)
@@ -263,9 +251,7 @@ func _draw_neighborhood_menu_action_button_options(player: Player, neighborhood:
 
 
 func _show_neighborhood_menu(neighborhood: Neighborhood):
-	var player: Player = players[local_player_multiplayer_unique_id]
-	
-	_draw_neighborhood_menu_action_button_options(player, neighborhood)
+	_draw_neighborhood_menu_action_button_options(neighborhood)
 	
 	_selected_neighborhood_index = neighborhood.get_index()
 	
@@ -288,7 +274,6 @@ func _close_neighborhood_menu():
 
 
 func _neighborhood_menu_action_selected(id):
-	var player: Player = players[local_player_multiplayer_unique_id]
 	var neighborhood: Neighborhood = territories.get_child(_selected_neighborhood_index)
 	match id:
 		NEIGHBORHOOD_ACTION.DO_CRIME:
@@ -456,13 +441,13 @@ func _neighborhood_menu_action_selected(id):
 			)
 	
 	neighborhood_menu_status_label.show()
-	_draw_neighborhood_menu_action_button_options(player, neighborhood)
+	_draw_neighborhood_menu_action_button_options(neighborhood)
 #	TODO: figure out if we wanna trigger event after selecting neighborhood option
 #	trigger_event(player)
 	_save_game.write_savegame()
 
 
-func trigger_event(player: Player, trigger_type = null):
+func trigger_event(trigger_type = null):
 	trigger_menu_description_label.text = ''
 	trigger_menu_status_label.text = ''
 	trigger_menu_options_button.get_popup().clear()
@@ -481,7 +466,7 @@ func trigger_event(player: Player, trigger_type = null):
 			if (
 				not player.past_four_triggers.has(type)
 				and typeof(condition) == TYPE_STRING
-				and _evaluateString(condition, player)
+				and _evaluateString(condition)
 			):
 				for outcome in events.triggers[type].get('outcomes'):
 					if outcome.get('triggered_by') == null:
@@ -491,7 +476,7 @@ func trigger_event(player: Player, trigger_type = null):
 	if applicable_outcomes.size() == 0:
 		return
 	
-	var outcomes = _calculate_outcomes_accumulated_chance(applicable_outcomes, player)
+	var outcomes = _calculate_outcomes_accumulated_chance(applicable_outcomes)
 	var chance = randf_range(0, outcomes[outcomes.size() - 1].get('accumulated_chance'))
 	for outcome in outcomes:
 		if outcome.get('accumulated_chance') > chance:
@@ -502,10 +487,10 @@ func trigger_event(player: Player, trigger_type = null):
 			trigger_menu_description_label.text = outcome.get('triggered_by')
 			trigger_menu.show()
 			for stat_update in outcome.get('stat_updates', []):
-				_handle_stat_updates(stat_update, player)
+				_handle_stat_updates(stat_update)
 			if outcome.get('trigger'):
 				trigger_menu_confirm_button.pressed.connect(
-					func (): trigger_event(player, outcome.get('trigger'))
+					func (): trigger_event(outcome.get('trigger'))
 				)
 				trigger_menu_confirm_button.show()
 			elif outcome.get('event'):
@@ -515,8 +500,7 @@ func trigger_event(player: Player, trigger_type = null):
 				trigger_menu_options_button.get_popup().id_pressed.connect(
 					func (id): _trigger_menu_option_selected(
 						id,
-						event_options,
-						player
+						event_options
 					)
 				)
 				trigger_menu_options_button.show()
@@ -529,12 +513,12 @@ func trigger_event(player: Player, trigger_type = null):
 		_save_game.write_savegame()
 
 
-func _handle_stat_updates(stat_update, player: Player):
+func _handle_stat_updates(stat_update):
 	var stat_name = stat_update.get('name')
 	var old_value = player.get(stat_name)
 	
 	var update_value = (
-		_evaluateString(stat_update.get('value'), player)
+		_evaluateString(stat_update.get('value'))
 		if typeof(stat_update.get('value')) == TYPE_STRING
 		else stat_update.get('value')
 	)
@@ -576,7 +560,7 @@ func _hide_trigger_menu():
 	event_timer.start()
 
 
-func _trigger_menu_option_selected(selected_id, options, player):
+func _trigger_menu_option_selected(selected_id, options):
 	trigger_menu_description_label.text =\
 		trigger_menu_options_button.get_popup().get_item_text(selected_id)
 	trigger_menu_status_label.text = ''
@@ -585,7 +569,7 @@ func _trigger_menu_option_selected(selected_id, options, player):
 	for option in options:
 		# Found selected event option
 		if text == option.get('type'):
-			var continue_func = ((func (): trigger_event(player, option.get('trigger')))
+			var continue_func = ((func (): trigger_event(option.get('trigger')))
 				if option.get('trigger')
 				else _hide_trigger_menu)
 			
@@ -595,27 +579,27 @@ func _trigger_menu_option_selected(selected_id, options, player):
 				return
 			
 			for stat_update in option.get('stat_updates', []):
-				_handle_stat_updates(stat_update, player)
+				_handle_stat_updates(stat_update)
 			trigger_menu_confirm_button.pressed.connect(continue_func)
 			trigger_menu_confirm_button.show()
 			_save_game.write_savegame()
 			return
 
 
-func _calculate_outcomes_accumulated_chance(outcomes: Array, player) -> Array:
+func _calculate_outcomes_accumulated_chance(outcomes: Array) -> Array:
 	var outcomes_accumulated_chance = []
 	var accumulated_chance = 0
 	for outcome in outcomes:
 		var meets_stat_requirements = true
 		for stat_requirement in outcome.get('stat_requirements', []):
-			if not _evaluateString(stat_requirement, player):
+			if not _evaluateString(stat_requirement):
 				meets_stat_requirements = false
 				break
 		if not meets_stat_requirements:
 			continue
 	
 		for chance_multipler in outcome.get('chance_multiplers', []):
-			accumulated_chance += _evaluateString(chance_multipler, player)
+			accumulated_chance += _evaluateString(chance_multipler)
 		accumulated_chance += outcome.get('chance')
 		
 		outcomes_accumulated_chance.append(outcome)
@@ -626,7 +610,7 @@ func _calculate_outcomes_accumulated_chance(outcomes: Array, player) -> Array:
 	return outcomes_accumulated_chance
 
 
-func _evaluateString(command: String, player):
+func _evaluateString(command: String):
 	var script = GDScript.new()
 	script.set_source_code('func eval(p):' + command)
 	script.reload()
@@ -636,8 +620,6 @@ func _evaluateString(command: String, player):
 
 
 func _calculate_total_expenses_amount() -> int:
-	var player: Player = players[local_player_multiplayer_unique_id]
-	
 	var total_rent = 0
 	for territory_index in player.rentals:
 		total_rent += territories.get_child(territory_index).stats.rent
@@ -657,8 +639,6 @@ func _calculate_total_expenses_amount() -> int:
 
 
 func _calculate_total_expenses() -> Dictionary:
-	var player: Player = players[local_player_multiplayer_unique_id]
-	
 	var cannot_afford_rentals = []
 	var cannot_afford_businesses = []
 	var rental_expenses = 0
@@ -709,8 +689,6 @@ func _calculate_total_expenses() -> Dictionary:
 
 
 func _calculate_total_income() -> Dictionary:
-	var player: Player = players[local_player_multiplayer_unique_id]
-	
 	var job_payout = 0
 	if player.job and player.job.get('territory_index'):
 		job_payout = territories.get_child(player.job.get('territory_index')).stats.job_payout
@@ -737,8 +715,6 @@ func _calculate_total_income() -> Dictionary:
 
 
 func _notify_status_updates():
-	var player: Player = players[local_player_multiplayer_unique_id]
-	
 	var total_income := _calculate_total_income()
 	for key in total_income:
 		if total_income[key] > 0:
@@ -811,7 +787,7 @@ func _notify_status_updates():
 			if player.sanity <= 0:
 				print('player ends')
 			else:
-				trigger_event(player)
+				trigger_event()
 	)
 	if player.sanity < 0:
 		print('player ends')
@@ -827,7 +803,6 @@ func _on_event_timer_timeout():
 
 
 func _show_stats_menu():
-	var player: Player = players[local_player_multiplayer_unique_id]
 	stats_menu_money_label.text = '${0}'.format([player.money])
 	stats_menu_income_label.text = '${0}'.format([
 		_calculate_total_income().values().reduce(func(total, num): return total + num, 0)
