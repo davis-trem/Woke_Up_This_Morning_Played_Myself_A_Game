@@ -1,7 +1,19 @@
-[gd_scene load_steps=9 format=3 uid="uid://cbbf3ehpra2pu"]
+[gd_scene load_steps=21 format=3 uid="uid://cbbf3ehpra2pu"]
 
 [ext_resource type="Script" path="res://scripts/game_map.gd" id="1_ftilf"]
 [ext_resource type="PackedScene" uid="uid://drm50b6ex8wt1" path="res://scenes/horizontal_spacer.tscn" id="2_4obur"]
+[ext_resource type="Texture2D" uid="uid://defvos23hm7co" path="res://images/neighborhoodmap.png" id="2_d5f2j"]
+[ext_resource type="PackedScene" uid="uid://dq6cpekqayxwn" path="res://scenes/hood.tscn" id="3_x37k4"]
+[ext_resource type="Texture2D" uid="uid://csvd20h33xmta" path="res://images/hood2.png" id="4_1jfl5"]
+[ext_resource type="Texture2D" uid="uid://cw5863xq0ky4u" path="res://images/hood3.png" id="5_h7yjl"]
+[ext_resource type="BitMap" uid="uid://biig510e5euv3" path="res://images/hood2bitmap.png" id="6_cvv8g"]
+[ext_resource type="Texture2D" uid="uid://cah33ogcyu2fd" path="res://images/hood4.png" id="6_twytu"]
+[ext_resource type="Texture2D" uid="uid://dk1v55mexpemu" path="res://images/hood5.png" id="7_1i7th"]
+[ext_resource type="Texture2D" uid="uid://ce6k3trgbxsco" path="res://images/hood6.png" id="8_4d81t"]
+[ext_resource type="BitMap" uid="uid://bsqkupner51we" path="res://images/hood3bitmap.png" id="8_20p2a"]
+[ext_resource type="BitMap" uid="uid://du2vdd3jvfg66" path="res://images/hood4bitmap.png" id="10_gv3n4"]
+[ext_resource type="BitMap" uid="uid://d1nj0tb0ah0ur" path="res://images/hood5bitmap.png" id="12_t37hy"]
+[ext_resource type="BitMap" uid="uid://qxc7ky2k572y" path="res://images/hood6bitmap.png" id="14_w5j0q"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_0ftft"]
 bg_color = Color(0.403922, 0.0235294, 0, 1)
@@ -77,6 +89,75 @@ offset_bottom = 100.0
 grow_horizontal = 2
 grow_vertical = 2
 columns = 3
+
+[node name="MarginContainer" type="MarginContainer" parent="TerritoryControl"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_top = 50
+
+[node name="ColorRect" type="ColorRect" parent="TerritoryControl/MarginContainer"]
+layout_mode = 2
+color = Color(0.768627, 1, 1, 1)
+
+[node name="Map" type="TextureRect" parent="TerritoryControl/MarginContainer"]
+layout_mode = 2
+texture = ExtResource("2_d5f2j")
+expand_mode = 2
+
+[node name="Hood0" parent="TerritoryControl/MarginContainer/Map" instance=ExtResource("3_x37k4")]
+layout_mode = 0
+offset_left = 29.0
+offset_top = 111.0
+offset_right = 662.0
+offset_bottom = 1495.0
+
+[node name="Hood1" parent="TerritoryControl/MarginContainer/Map" instance=ExtResource("3_x37k4")]
+layout_mode = 0
+offset_left = 22.0
+offset_top = 1.0
+offset_right = 1249.0
+offset_bottom = 981.0
+texture_normal = ExtResource("4_1jfl5")
+texture_click_mask = ExtResource("6_cvv8g")
+
+[node name="Hood2" parent="TerritoryControl/MarginContainer/Map" instance=ExtResource("3_x37k4")]
+layout_mode = 0
+offset_left = 317.0
+offset_right = 1274.0
+offset_bottom = 1388.0
+texture_normal = ExtResource("5_h7yjl")
+texture_click_mask = ExtResource("8_20p2a")
+
+[node name="Hood3" parent="TerritoryControl/MarginContainer/Map" instance=ExtResource("3_x37k4")]
+layout_mode = 0
+offset_left = 195.0
+offset_top = 273.0
+offset_right = 989.0
+offset_bottom = 976.0
+texture_normal = ExtResource("6_twytu")
+texture_click_mask = ExtResource("10_gv3n4")
+
+[node name="Hood4" parent="TerritoryControl/MarginContainer/Map" instance=ExtResource("3_x37k4")]
+layout_mode = 0
+offset_left = 220.0
+offset_top = 467.0
+offset_right = 1127.0
+offset_bottom = 1048.0
+texture_normal = ExtResource("7_1i7th")
+texture_click_mask = ExtResource("12_t37hy")
+
+[node name="Hood5" parent="TerritoryControl/MarginContainer/Map" instance=ExtResource("3_x37k4")]
+layout_mode = 0
+offset_left = 446.0
+offset_top = 248.0
+offset_right = 1194.0
+offset_bottom = 1431.0
+texture_normal = ExtResource("8_4d81t")
+texture_click_mask = ExtResource("14_w5j0q")
 
 [node name="StatsPreviewControl" type="Control" parent="."]
 custom_minimum_size = Vector2(0, 50)

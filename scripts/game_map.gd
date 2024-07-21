@@ -4,11 +4,9 @@ const Events = preload('res://resources/events.gd')
 const NeighborhoodStats = preload('res://resources/neighborhood_stats.gd')
 const Player = preload('res://resources/player.gd')
 const SaveGame = preload('res://resources/save_game.gd')
-const neighborhood_scene = preload('res://scenes/neighborhood.tscn')
 const Constants = preload('res://scripts/constants.gd')
-const Neighborhood = preload('res://scripts/neighborhood.gd')
+const Hood = preload('res://scripts/hood.gd')
 
-@onready var territories = $TerritoryControl/Territories
 @onready var neighborhood_menu = $NeighborhoodMenu
 @onready var neighborhood_menu_name_label = $NeighborhoodMenu/ColorRect/MarginContainer/VBoxContainer/NameLabel
 @onready var neighborhood_menu_rent_label = $NeighborhoodMenu/ColorRect/MarginContainer/VBoxContainer/MarginContainer/VBoxContainer/GridContainer/RentLabel
@@ -49,10 +47,9 @@ const Neighborhood = preload('res://scripts/neighborhood.gd')
 @onready var status_notifier_continue_button = $StatusNotifier/MarginContainer/ColorRect/MarginContainer/VBoxContainer/ContinueButton
 @onready var dev_menu = $DevMenu
 @onready var dev_menu_trigger_button = $DevMenu/MarginContainer/ColorRect/MenuButton
+@onready var map: TextureRect = $TerritoryControl/MarginContainer/Map
 
 @onready var events = Events.new()
-
-@export var territory_count: int = 9
 
 enum NEIGHBORHOOD_ACTION {
 	DO_CRIME,
@@ -69,54 +66,55 @@ enum NEIGHBORHOOD_ACTION {
 }
 
 var neighborhood_actions = [
-	func (p: Player, n: Neighborhood): return (
+	func (p: Player, n: NeighborhoodStats, ni: int): return (
 		{'key': NEIGHBORHOOD_ACTION.RENT,
 			'label': 'Rent',
-			'disable': n.stats.rent > p.money,
+			'disable': n.rent > p.money,
 			'tooltip': tr('cannot_afford')}
-		if not p.rentals.has(n.get_index())
+		if not p.rentals.has(ni)
 		else {'key': NEIGHBORHOOD_ACTION.SELL_RENTAL, 'label': 'Sell rental'}),
-	func (p: Player, n: Neighborhood): return (
+	func (p: Player, n: NeighborhoodStats, ni: int): return (
 		{'key': NEIGHBORHOOD_ACTION.START_BUSINESS,
 			'label': 'Start Business',
-			'disable': not p.rentals.has(n.get_index()) or n.stats.cost_to_start_business > p.money,
+			'disable': not p.rentals.has(ni) or n.cost_to_start_business > p.money,
 			'tooltip': (
 				tr('cannot_afford')
-				if n.stats.cost_to_start_business > p.money
+				if n.cost_to_start_business > p.money
 				else tr('rental_needed')
 			)}
-		if p.businesses.find(func (b: Dictionary): return b.get('territory_index') == n.get_index()) == -1
+		if p.businesses.find(func (b: Dictionary): return b.get('territory_index') == ni) == -1
 		else {'key': NEIGHBORHOOD_ACTION.SELL_BUSINESS, 'label': 'Sell business'}),
-	func (p: Player, n: Neighborhood): return (
+	func (p: Player, n: NeighborhoodStats, ni: int): return (
 		{'key': NEIGHBORHOOD_ACTION.QUIT_JOB, 'label': 'Quit job'}
-		if p.job.get('territory_index') == n.get_index()
+		if p.job.get('territory_index') == ni
 		else {'key': NEIGHBORHOOD_ACTION.GET_JOB,
 			'label': 'Get job',
-			'disable': not p.rentals.has(n.get_index()),
+			'disable': not p.rentals.has(ni),
 			'tooltip': tr('rental_needed')}),
-	func (p: Player, n: Neighborhood): return {
+	func (p: Player, n: NeighborhoodStats, ni: int): return {
 		'key': NEIGHBORHOOD_ACTION.DO_CRIME,
 		'label': 'Do crime',
-		'disable': not p.rentals.has(n.get_index()),
+		'disable': not p.rentals.has(ni),
 		'tooltip': tr('rental_needed')},
-	func (p: Player, n: Neighborhood): return (
+	func (p: Player, n: NeighborhoodStats, ni: int): return (
 		{'key': NEIGHBORHOOD_ACTION.WORK_FOR_FAM_1,
 			'label': 'Do work for Fam 1',
-			'disable': not p.rentals.has(n.get_index()),
+			'disable': not p.rentals.has(ni),
 			'tooltip': tr('rental_needed')}
-		if n.stats.family_1_ownership > 0
+		if n.family_1_ownership > 0
 		else null),
-	func (p: Player, n: Neighborhood): return (
+	func (p: Player, n: NeighborhoodStats, ni: int): return (
 		{'key': NEIGHBORHOOD_ACTION.WORK_FOR_FAM_2,
 			'label': 'Do work for Fam 2',
-			'disable': not p.rentals.has(n.get_index()),
+			'disable': not p.rentals.has(ni),
 			'tooltip': tr('rental_needed')}
-		if n.stats.family_2_ownership > 0
+		if n.family_2_ownership > 0
 		else null),
 ];
 
 var start_new_game = false
 var player: Player
+var neighborhoods: Array[NeighborhoodStats]
 var _save_game: SaveGame
 var _selected_neighborhood_index
 
@@ -160,7 +158,7 @@ func _create_or_load_save():
 		_save_game = SaveGame.load_savegame() as SaveGame
 		events = _save_game.events
 		player = _save_game.player
-		_draw_territories(_save_game.neighoborhood_stats_list.size(), true)
+		_draw_territories(true)
 	else:
 		_save_game = SaveGame.new()
 		player = Player.new()
@@ -172,18 +170,18 @@ func _create_or_load_save():
 
 
 func _assign_player_to_neiborhood():
-	var territory_index = randi() % territories.get_child_count()
+	var default_hood_index = randi() % map.get_child_count()
 	
-	player.rentals.append(territory_index)
-	territories.get_child(territory_index).status_label.text = 'Rented'
+	player.rentals.append(default_hood_index)
+	(map.get_child(default_hood_index) as Hood).rented_icon.show()
 	
-	if territories.get_child(territory_index).stats.family_1_ownership >= 0.8:
+	if neighborhoods[default_hood_index].family_1_ownership >= 0.8:
 		player.money = 5000
 		player.street_smart = 0.3
 		player.heat = 0.2
 		player.family_1_respect = 0.2
 		player.family_2_respect = -0.2
-	elif territories.get_child(territory_index).stats.family_2_ownership >= 0.8:
+	elif neighborhoods[default_hood_index].family_2_ownership >= 0.8:
 		player.money = 10000
 		player.street_smart = 0.2
 		player.heat = 0.1
@@ -193,54 +191,58 @@ func _assign_player_to_neiborhood():
 		player.money = 50000
 
 
-func _draw_territories(size: int = territory_count, save_exist: bool = false):
-	for i in range(size):
-		var neighborhood = neighborhood_scene.instantiate()
-		neighborhood.pressed.connect(func (): _show_neighborhood_menu(neighborhood))
-		
+func _draw_territories(save_exist: bool = false):
+	for hood: TextureButton in map.get_children():
+		var hood_index = hood.get_index()
+		hood.pressed.connect(func (): _show_neighborhood_menu(hood_index))
 		if save_exist:
-			neighborhood.stats = _save_game.neighoborhood_stats_list[i]
-			if player.rentals.has(i):
-				neighborhood.initial_status_label_text = 'Rented'
+			var neighborhood = _save_game.neighoborhood_stats_list[hood_index]
+			neighborhoods.append(neighborhood)
+			(map.get_child(hood_index) as Hood).name_label.text = neighborhood.name
+			if player.rentals.has(hood_index):
+				(map.get_child(hood_index) as Hood).rented_icon.show()
 		else:
 			player.territories_respect.append(0)
 			
-			neighborhood.stats = NeighborhoodStats.new()
-			neighborhood.stats.name = 'Yeer{0}'.format([i])
-			# 50% of map ran by fam_1, 30% ran by fam_2, 20% is neutral
-			if i < size / 2:
-				neighborhood.stats.family_1_ownership = 1.0
-				neighborhood.stats.family_2_ownership = 0.0
-				neighborhood.stats.job_payout = [100, 200, 300][randi() % 3]
-				neighborhood.stats.business_payout = [1000, 2000, 3000][randi() % 3]
-				neighborhood.stats.cost_to_start_business = [20000, 30000, 40000][randi() % 3]
-				neighborhood.stats.cost_to_run_business = [2000, 3000, 4000][randi() % 3]
-				neighborhood.stats.rent = [1000, 2000, 3000][randi() % 3]
-			elif i <= (size / 2 + ((size / 2) / 2)):
-				neighborhood.stats.family_1_ownership = 0.0
-				neighborhood.stats.family_2_ownership = 1.0
-				neighborhood.stats.job_payout = [400, 500, 600][randi() % 3]
-				neighborhood.stats.business_payout = [4000, 5000, 6000][randi() % 3]
-				neighborhood.stats.cost_to_start_business = [50000, 60000, 70000][randi() % 3]
-				neighborhood.stats.cost_to_run_business = [5000, 6000, 7000][randi() % 3]
-				neighborhood.stats.rent = [4000, 5000, 6000][randi() % 3]
+			var neighborhood = NeighborhoodStats.new()
+			neighborhood.name = 'Yeer{0}'.format([hood_index])
+			(map.get_child(hood_index) as Hood).name_label.text = neighborhood.name
+			# 50% of map ran by fam_1, 33% ran by fam_2, 17% is neutral
+			if hood_index == 3:
+				neighborhood.family_1_ownership = 0.0
+				neighborhood.family_2_ownership = 0.0
+				neighborhood.job_payout = [700, 800, 900][randi() % 3]
+				neighborhood.business_payout = [7000, 8000, 9000][randi() % 3]
+				neighborhood.cost_to_start_business = [80000, 90000, 100000][randi() % 3]
+				neighborhood.cost_to_run_business = [8000, 9000, 10000][randi() % 3]
+				neighborhood.rent = [7000, 8000, 9000][randi() % 3]
+			if hood_index < 3:
+				neighborhood.family_1_ownership = 1.0
+				neighborhood.family_2_ownership = 0.0
+				neighborhood.job_payout = [100, 200, 300][randi() % 3]
+				neighborhood.business_payout = [1000, 2000, 3000][randi() % 3]
+				neighborhood.cost_to_start_business = [20000, 30000, 40000][randi() % 3]
+				neighborhood.cost_to_run_business = [2000, 3000, 4000][randi() % 3]
+				neighborhood.rent = [1000, 2000, 3000][randi() % 3]
 			else:
-				neighborhood.stats.family_1_ownership = 0.0
-				neighborhood.stats.family_2_ownership = 0.0
-				neighborhood.stats.job_payout = [700, 800, 900][randi() % 3]
-				neighborhood.stats.business_payout = [7000, 8000, 9000][randi() % 3]
-				neighborhood.stats.cost_to_start_business = [80000, 90000, 100000][randi() % 3]
-				neighborhood.stats.cost_to_run_business = [8000, 9000, 10000][randi() % 3]
-				neighborhood.stats.rent = [7000, 8000, 9000][randi() % 3]
-			_save_game.neighoborhood_stats_list.append(neighborhood.stats)
-		
-		territories.add_child(neighborhood)
+				neighborhood.family_1_ownership = 0.0
+				neighborhood.family_2_ownership = 1.0
+				neighborhood.job_payout = [400, 500, 600][randi() % 3]
+				neighborhood.business_payout = [4000, 5000, 6000][randi() % 3]
+				neighborhood.cost_to_start_business = [50000, 60000, 70000][randi() % 3]
+				neighborhood.cost_to_run_business = [5000, 6000, 7000][randi() % 3]
+				neighborhood.rent = [4000, 5000, 6000][randi() % 3]
+			
+			neighborhoods.append(neighborhood)
+				
+			_save_game.neighoborhood_stats_list.append(neighborhoods[hood_index])
 
 
-func _draw_neighborhood_menu_action_button_options(neighborhood: Neighborhood):
+func _draw_neighborhood_menu_action_button_options(hood_index: int):
+	var neighborhood = neighborhoods[hood_index]
 	neighborhood_menu_actions_button.get_popup().clear()
 	for action_func in neighborhood_actions:
-		var action = action_func.call(player, neighborhood)
+		var action = action_func.call(player, neighborhood, hood_index)
 		if action != null:
 			neighborhood_menu_actions_button.get_popup().add_item(action.get('label'), action.get('key'))
 			if action.get('disable'):
@@ -250,20 +252,20 @@ func _draw_neighborhood_menu_action_button_options(neighborhood: Neighborhood):
 					neighborhood_menu_actions_button.get_popup().set_item_tooltip(index, action.get('tooltip'))
 
 
-func _show_neighborhood_menu(neighborhood: Neighborhood):
-	_draw_neighborhood_menu_action_button_options(neighborhood)
+func _show_neighborhood_menu(hood_index: int):
+	_draw_neighborhood_menu_action_button_options(hood_index)
 	
-	_selected_neighborhood_index = neighborhood.get_index()
+	_selected_neighborhood_index = hood_index
 	
-	neighborhood_menu_name_label.text = neighborhood.stats.get('name')
-	neighborhood_menu_rent_label.text = 'Rent: ${0}'.format([neighborhood.stats.rent])
-	neighborhood_menu_business_start_label.text = 'Cost to Start Business: ${0}'.format([neighborhood.stats.cost_to_start_business])
-	neighborhood_menu_business_upkeep_label.text = 'Cost to Upkeep Business: ${0}'.format([neighborhood.stats.cost_to_run_business])
-	neighborhood_menu_business_payout_label.text = 'Business Payout: ${0}'.format([neighborhood.stats.business_payout])
+	neighborhood_menu_name_label.text = neighborhoods[hood_index].get('name')
+	neighborhood_menu_rent_label.text = 'Rent: ${0}'.format([neighborhoods[hood_index].rent])
+	neighborhood_menu_business_start_label.text = 'Cost to Start Business: ${0}'.format([neighborhoods[hood_index].cost_to_start_business])
+	neighborhood_menu_business_upkeep_label.text = 'Cost to Upkeep Business: ${0}'.format([neighborhoods[hood_index].cost_to_run_business])
+	neighborhood_menu_business_payout_label.text = 'Business Payout: ${0}'.format([neighborhoods[hood_index].business_payout])
 	neighborhood_menu_fam_1_ownership_label.text = '{0} Ownership:'.format(['Family 1'])
 	neighborhood_menu_fam_2_ownership_label.text = '{0} Ownership:'.format(['Family 2'])
-	neighborhood_menu_fam_1_ownership_progress_bar.value = neighborhood.stats.family_1_ownership
-	neighborhood_menu_fam_2_ownership_progress_bar.value = neighborhood.stats.family_2_ownership
+	neighborhood_menu_fam_1_ownership_progress_bar.value = neighborhoods[hood_index].family_1_ownership
+	neighborhood_menu_fam_2_ownership_progress_bar.value = neighborhoods[hood_index].family_2_ownership
 	neighborhood_menu_status_label.hide()
 	neighborhood_menu.show()
 
@@ -274,7 +276,7 @@ func _close_neighborhood_menu():
 
 
 func _neighborhood_menu_action_selected(id):
-	var neighborhood: Neighborhood = territories.get_child(_selected_neighborhood_index)
+	var neighborhood = neighborhoods[_selected_neighborhood_index]
 	match id:
 		NEIGHBORHOOD_ACTION.DO_CRIME:
 			var heat_limits = Constants.STATS_LIMITS.get(Constants.PLAYER_HEAT)
@@ -315,11 +317,11 @@ func _neighborhood_menu_action_selected(id):
 		NEIGHBORHOOD_ACTION.QUIT_JOB:
 			player.job = {}
 		NEIGHBORHOOD_ACTION.RENT:
-			player.money -= neighborhood.stats.rent
+			player.money -= neighborhood.rent
 			player.rentals.append(_selected_neighborhood_index)
-			neighborhood.status_label.text = 'Rented'
+			(map.get_child(_selected_neighborhood_index) as Hood).rented_icon.show()
 			neighborhood_menu_status_label.text = 'Territory rented for ${AMOUNT}'.format({
-				'AMOUNT': neighborhood.stats.rent
+				'AMOUNT': neighborhood.rent
 			})
 		NEIGHBORHOOD_ACTION.SABOTAGE_FAM_1:
 			pass
@@ -327,25 +329,25 @@ func _neighborhood_menu_action_selected(id):
 			pass
 		NEIGHBORHOOD_ACTION.SELL_RENTAL:
 			player.rentals = player.rentals.filter(func (i): return i != _selected_neighborhood_index)
-			player.money += neighborhood.stats.rent
-			neighborhood.status_label.text = ''
+			player.money += neighborhood.rent
+			(map.get_child(_selected_neighborhood_index) as Hood).rented_icon.hide()
 			neighborhood_menu_status_label.text = 'Rental sold for ${AMOUNT}'.format({
-				'AMOUNT': neighborhood.stats.rent
+				'AMOUNT': neighborhood.rent
 			})
 		NEIGHBORHOOD_ACTION.SELL_BUSINESS:
 			var index = player.businesses.find(
 				func (b): return b.get('territory_index') == _selected_neighborhood_index
 			)
 			player.businesses.pop_at(index)
-			player.money += neighborhood.stats.cost_to_start_business
+			player.money += neighborhood.cost_to_start_business
 			neighborhood_menu_status_label.text = 'Business sold for ${AMOUNT}'.format({
-				'AMOUNT': neighborhood.stats.cost_to_start_business
+				'AMOUNT': neighborhood.cost_to_start_business
 			})
 		NEIGHBORHOOD_ACTION.START_BUSINESS:
-			player.money -= neighborhood.stats.cost_to_start_business
+			player.money -= neighborhood.cost_to_start_business
 			player.businesses.append({'territory_index': _selected_neighborhood_index})
 			neighborhood_menu_status_label.text = 'Business started for ${AMOUNT}'.format({
-				'AMOUNT': neighborhood.stats.cost_to_start_business
+				'AMOUNT': neighborhood.cost_to_start_business
 			})
 		NEIGHBORHOOD_ACTION.WORK_FOR_FAM_1:
 			var respect_limits = Constants.STATS_LIMITS.get(Constants.PLAYER_FAMILY_1_RESPECT)
@@ -441,7 +443,7 @@ func _neighborhood_menu_action_selected(id):
 			)
 	
 	neighborhood_menu_status_label.show()
-	_draw_neighborhood_menu_action_button_options(neighborhood)
+	_draw_neighborhood_menu_action_button_options(_selected_neighborhood_index)
 #	TODO: figure out if we wanna trigger event after selecting neighborhood option
 #	trigger_event(player)
 	_save_game.write_savegame()
@@ -621,13 +623,12 @@ func _evaluateString(command: String):
 
 func _calculate_total_expenses_amount() -> int:
 	var total_rent = 0
-	for territory_index in player.rentals:
-		total_rent += territories.get_child(territory_index).stats.rent
+	for hood_index in player.rentals:
+		total_rent += neighborhoods[hood_index].rent
 	
 	var total_business_costs = 0
 	for business in player.businesses:
-		total_business_costs += territories\
-			.get_child(business.get('territory_index')).stats.cost_to_run_business
+		total_business_costs += neighborhoods[business.get('territory_index')].cost_to_run_business
 		if business.get('extortioner'):
 			pass # TODO
 			
@@ -643,27 +644,27 @@ func _calculate_total_expenses() -> Dictionary:
 	var cannot_afford_businesses = []
 	var rental_expenses = 0
 	var businesses_expenses = 0
-	for territory_index in player.rentals:
-		var rent = territories.get_child(territory_index).stats.rent
+	for hood_index in player.rentals:
+		var rent = neighborhoods[hood_index].rent
 		if player.money >= rent:
 			rental_expenses += rent
 		else:
-			cannot_afford_rentals.append(territory_index)
+			cannot_afford_rentals.append(hood_index)
 		# Check if owns business in territory
 		for business in player.businesses:
-			if business.get('territory_index') == territory_index:
-				var business_cost = territories.get_child(territory_index).stats.cost_to_run_business
+			if business.get('territory_index') == hood_index:
+				var business_cost = neighborhoods[hood_index].cost_to_run_business
 				if business.get('extortioner'):
 					pass # TODO
 				
 				# if cannot afford rent then cannot keep business
 				if (
-					cannot_afford_rentals.find(territory_index) == -1
+					cannot_afford_rentals.find(hood_index) == -1
 					and player.money >= business_cost
 				):
 					businesses_expenses += business_cost
 				else:
-					cannot_afford_businesses.append(territory_index)
+					cannot_afford_businesses.append(hood_index)
 	
 	for territory_index in cannot_afford_rentals:
 		player.rentals = player.rentals.filter(func (ti): ti != territory_index)
@@ -691,12 +692,11 @@ func _calculate_total_expenses() -> Dictionary:
 func _calculate_total_income() -> Dictionary:
 	var job_payout = 0
 	if player.job and player.job.get('territory_index'):
-		job_payout = territories.get_child(player.job.get('territory_index')).stats.job_payout
+		job_payout = neighborhoods[player.job.get('territory_index')].job_payout
 	
 	var total_business_payout = 0
 	for business in player.businesses:
-		total_business_payout += territories\
-			.get_child(business.get('territory_index')).stats.business_payout
+		total_business_payout += neighborhoods[business.get('territory_index')].business_payout
 	
 	var fam_1_payout = 0
 	if player.family_1_respect >= 0.7:
@@ -723,7 +723,7 @@ func _notify_status_updates():
 				'payout': total_income[key],
 				'businesses': ', '.join(
 					player.businesses.map(
-						func(b): return territories.get_child(b.get('territory_index')).stats.name
+						func(b): return neighborhoods[b.get('territory_index')].name
 					)
 				),
 				'fam_1': 'fam_1',
@@ -738,11 +738,11 @@ func _notify_status_updates():
 			func (ti): !total_expenses.get('cannot_afford').get('retails').has(ti)
 		)
 		# Update board to show as no longer rented
-		for territory_index in total_expenses.get('cannot_afford').get('retails'):
-			territories.get_child(territory_index).status_label = ''
+		for hood_index in total_expenses.get('cannot_afford').get('retails'):
+			(map.get_child(hood_index) as Hood).rented_icon.hide()
 		cannot_afford_details += tr('cannot_afford_retails').format({
 			'rentals': ', '.join(total_expenses.get('cannot_afford').get('retails').map(
-				func (ti): return territories.get_child(ti).stats.name
+				func (ti): return neighborhoods[ti].name
 			))
 		}) + '\n'
 	if total_expenses.get('cannot_afford').get('businesses').size() > 0:
@@ -751,7 +751,7 @@ func _notify_status_updates():
 		)
 		cannot_afford_details += tr('cannot_afford_businesses').format({
 			'businesses': ', '.join(total_expenses.get('cannot_afford').get('businesses').map(
-				func (b): return territories.get_child(b.get('territory_index')).stats.name
+				func (b): return neighborhoods[b.get('territory_index')].name
 			))
 		}) + '\n'
 	
@@ -761,10 +761,10 @@ func _notify_status_updates():
 			status_notifier_details_label.text += tr(key).format({
 				'expense': total_expenses.get('expenses').get(key),
 				'rentals': ', '.join(player.rentals.map(
-					func (ti): return territories.get_child(ti).stats.name
+					func (ti): return neighborhoods[ti].name
 				)),
 				'businesses': ', '.join(player.businesses.map(
-					func (b): return territories.get_child(b.get('territory_index')).stats.name
+					func (b): return neighborhoods[b.get('territory_index')].name
 				))
 			}) + '\n'
 	status_notifier_details_label.text += cannot_afford_details + '\n'
@@ -815,14 +815,14 @@ func _show_stats_menu():
 	stats_menu_street_smart_progress_bar.value = player.street_smart
 	stats_menu_businesses_label.text = ''
 	for business in player.businesses:
-		stats_menu_businesses_label.text += territories.get_child(
+		stats_menu_businesses_label.text += neighborhoods[
 			business.get('territory_index')
-		).stats.name + '\n'
+		].name + '\n'
 	stats_menu_rentals_label.text = ''
 	for territory_index in player.rentals:
-		stats_menu_rentals_label.text += territories.get_child(
+		stats_menu_rentals_label.text += neighborhoods[
 			territory_index
-		).stats.name + '\n'
+		].name + '\n'
 	stats_menu.show()
 
 

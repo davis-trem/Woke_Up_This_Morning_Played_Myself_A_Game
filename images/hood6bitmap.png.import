@@ -1,0 +1,16 @@
+[remap]
+
+importer="bitmap"
+type="BitMap"
+uid="uid://qxc7ky2k572y"
+path="res://.godot/imported/hood6bitmap.png-a27e531f71683db3784e19cfce5b24d7.res"
+
+[deps]
+
+source_file="res://images/hood6bitmap.png"
+dest_files=["res://.godot/imported/hood6bitmap.png-a27e531f71683db3784e19cfce5b24d7.res"]
+
+[params]
+
+create_from=0
+threshold=0.5
