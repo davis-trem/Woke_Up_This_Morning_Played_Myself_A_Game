@@ -14,3 +14,4 @@ extends Resource
 @export var street_smart := 0.0
 @export var territories_respect := [] # range(-1, 1)[territory_index]
 @export var past_four_triggers := []
+@export var current_month := 0

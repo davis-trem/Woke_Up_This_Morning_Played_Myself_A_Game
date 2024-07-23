@@ -525,7 +525,7 @@ const Constants = preload('res://scripts/constants.gd')
 				],
 				'stat_requirements': [
 					'return p.money > (50000 / (1 - clampf(p.heat, 0.01, 0.99)))',
-					'return p.street_smarts > 0.3',
+					'return p.street_smart > 0.3',
 				],
 				'stat_updates': [
 					{'name': Constants.PLAYER_MONEY, 'value': 'return -(50000 / (1 - clampf(p.heat, 0.01, 0.99)))'},
@@ -725,7 +725,7 @@ const Constants = preload('res://scripts/constants.gd')
 				],
 				'stat_requirements': [
 					'return p.family_1_respect > 0.5 or p.family_2_respect > 0.5',
-					'return p.street_smarts > 0.3',
+					'return p.street_smart > 0.3',
 				],
 				'stat_updates': [
 					{'name': Constants.PLAYER_HEAT, 'value': 0.1},

@@ -25,11 +25,9 @@ const Hood = preload('res://scripts/hood.gd')
 @onready var trigger_menu_status_label = $TriggerMenu/ColorRect/MarginContainer/VBoxContainer/StatusUpdateLabel
 @onready var trigger_menu_options_button = $TriggerMenu/ColorRect/MarginContainer/VBoxContainer/OptionsButton
 @onready var trigger_menu_confirm_button = $TriggerMenu/ColorRect/MarginContainer/ConfirmButton
-@onready var event_timer = $EventTimer
 @onready var stats_preview_money_label = $StatsPreviewControl/Panel/MarginContainer/HBoxContainer/MoneyLabel
 @onready var stats_preview_sanity_progress_bar = $StatsPreviewControl/Panel/MarginContainer/HBoxContainer/SanityProgressBar
 @onready var stats_preview_show_stats_button = $StatsPreviewControl/Panel/MarginContainer/HBoxContainer/ShowStatsButton
-@onready var stats_preview_expenses_countdown_progress_bar = $StatsPreviewControl/Panel/MarginContainer/HBoxContainer/ExpensesCountdownProgressBar
 @onready var stats_menu = $StatsMenu
 @onready var stats_menu_money_label = $StatsMenu/ColorRect/MarginContainer/GridContainer/MoneyLabel
 @onready var stats_menu_income_label = $StatsMenu/ColorRect/MarginContainer/GridContainer/IncomeLabel
@@ -135,8 +133,6 @@ func _ready():
 				dev_menu_trigger_button.get_popup().get_item_text(index)
 			)
 	)
-	
-	event_timer.start()
 
 
 func _process(delta):
@@ -146,10 +142,7 @@ func _process(delta):
 		])
 		stats_preview_sanity_progress_bar.value = player.sanity
 	
-	stats_preview_expenses_countdown_progress_bar.value = event_timer.time_left / event_timer.wait_time
-	
 	if not dev_menu.visible and Input.is_action_pressed('show_dev_menu'):
-		event_timer.stop()
 		dev_menu.show()
 
 
@@ -444,9 +437,8 @@ func _neighborhood_menu_action_selected(id):
 	
 	neighborhood_menu_status_label.show()
 	_draw_neighborhood_menu_action_button_options(_selected_neighborhood_index)
-#	TODO: figure out if we wanna trigger event after selecting neighborhood option
-#	trigger_event(player)
-	_save_game.write_savegame()
+	
+	_notify_status_updates()
 
 
 func trigger_event(trigger_type = null):
@@ -559,7 +551,6 @@ func _handle_stat_updates(stat_update):
 
 func _hide_trigger_menu():
 	trigger_menu.hide()
-	event_timer.start()
 
 
 func _trigger_menu_option_selected(selected_id, options):
@@ -715,6 +706,7 @@ func _calculate_total_income() -> Dictionary:
 
 
 func _notify_status_updates():
+	player.current_month += 1
 	var total_income := _calculate_total_income()
 	for key in total_income:
 		if total_income[key] > 0:
@@ -796,12 +788,6 @@ func _notify_status_updates():
 	status_notifier.show()
 
 
-func _on_event_timer_timeout():
-	event_timer.stop()
-	
-	_notify_status_updates()
-
-
 func _show_stats_menu():
 	stats_menu_money_label.text = '${0}'.format([player.money])
 	stats_menu_income_label.text = '${0}'.format([
@@ -828,3 +814,7 @@ func _show_stats_menu():
 
 func _on_show_stats_button_pressed():
 	_show_stats_menu()
+
+
+func _on_button_pressed() -> void:
+	_notify_status_updates()
