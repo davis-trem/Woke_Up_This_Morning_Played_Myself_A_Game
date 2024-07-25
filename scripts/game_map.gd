@@ -27,6 +27,7 @@ const Hood = preload('res://scripts/hood.gd')
 @onready var trigger_menu_confirm_button = $TriggerMenu/ColorRect/MarginContainer/ConfirmButton
 @onready var stats_preview_money_label = $StatsPreviewControl/Panel/MarginContainer/HBoxContainer/MoneyLabel
 @onready var stats_preview_sanity_progress_bar = $StatsPreviewControl/Panel/MarginContainer/HBoxContainer/SanityProgressBar
+@onready var stats_preview_actions_left_progress_bar: ProgressBar = $StatsPreviewControl/Panel/MarginContainer/HBoxContainer/ActionsLeftProgressBar
 @onready var stats_preview_show_stats_button = $StatsPreviewControl/Panel/MarginContainer/HBoxContainer/ShowStatsButton
 @onready var stats_menu = $StatsMenu
 @onready var stats_menu_money_label = $StatsMenu/ColorRect/MarginContainer/GridContainer/MoneyLabel
@@ -141,6 +142,7 @@ func _process(delta):
 			player.money
 		])
 		stats_preview_sanity_progress_bar.value = player.sanity
+		stats_preview_actions_left_progress_bar.value = player.actions_left
 	
 	if not dev_menu.visible and Input.is_action_pressed('show_dev_menu'):
 		dev_menu.show()
@@ -209,7 +211,7 @@ func _draw_territories(save_exist: bool = false):
 				neighborhood.cost_to_start_business = [80000, 90000, 100000][randi() % 3]
 				neighborhood.cost_to_run_business = [8000, 9000, 10000][randi() % 3]
 				neighborhood.rent = [7000, 8000, 9000][randi() % 3]
-			if hood_index < 3:
+			elif hood_index < 3:
 				neighborhood.family_1_ownership = 1.0
 				neighborhood.family_2_ownership = 0.0
 				neighborhood.job_payout = [100, 200, 300][randi() % 3]
@@ -238,7 +240,7 @@ func _draw_neighborhood_menu_action_button_options(hood_index: int):
 		var action = action_func.call(player, neighborhood, hood_index)
 		if action != null:
 			neighborhood_menu_actions_button.get_popup().add_item(action.get('label'), action.get('key'))
-			if action.get('disable'):
+			if action.get('disable') or player.actions_left == 0:
 				var index = neighborhood_menu_actions_button.get_popup().get_item_index(action.get('key'))
 				neighborhood_menu_actions_button.get_popup().set_item_disabled(index, true)
 				if action.get('tooltip'):
@@ -269,176 +271,124 @@ func _close_neighborhood_menu():
 
 
 func _neighborhood_menu_action_selected(id):
+	trigger_menu_description_label.text = ''
+	trigger_menu_status_label.text = ''
+	trigger_menu_options_button.get_popup().clear()
+	trigger_menu_options_button.hide()
+	trigger_menu_confirm_button.hide()
 	var neighborhood = neighborhoods[_selected_neighborhood_index]
+	var stat_updates = [];
 	match id:
 		NEIGHBORHOOD_ACTION.DO_CRIME:
-			var heat_limits = Constants.STATS_LIMITS.get(Constants.PLAYER_HEAT)
-			var street_smart_limits = Constants.STATS_LIMITS.get(Constants.PLAYER_STREET_SMART)
 			var money = randi_range(1000, 3000)
 			var heat = snappedf(randf_range(0.1, 0.3), 0.01)
 			var street_smart = snappedf(randf_range(0.1, 0.3), 0.01)
 			
-			neighborhood_menu_status_label.text = 'You have {CHANGE} {DIFF} {STAT}'.format({
-				'CHANGE': 'gained',
-				'STAT': 'dollars',
-				'DIFF': money
-			}) + '\n'
-			neighborhood_menu_status_label.text += 'You have {CHANGE} {DIFF} {STAT}'.format({
-				'CHANGE': 'gained',
-				'STAT': 'heat',
-				'DIFF': heat
-			}) + '\n'
-			neighborhood_menu_status_label.text += 'You have {CHANGE} {DIFF} {STAT}'.format({
-				'CHANGE': 'gained',
-				'STAT': 'street smart',
-				'DIFF': street_smart
-			}) + '\n'
-			
-			player.money += money
-			player.heat = clampf(
-				player.heat + heat,
-				heat_limits.get('min'),
-				heat_limits.get('max')
-			)
-			player.street_smart = clampf(
-				player.street_smart + street_smart,
-				street_smart_limits.get('min'),
-				street_smart_limits.get('max')
-			)
+			stat_updates = [
+				{'name': Constants.PLAYER_MONEY, 'value': money},
+				{'name': Constants.PLAYER_HEAT, 'value': heat},
+				{'name': Constants.PLAYER_STREET_SMART, 'value': street_smart},
+			]
 		NEIGHBORHOOD_ACTION.GET_JOB:
-			player.job = {'territory_index': _selected_neighborhood_index}
+			stat_updates = [
+				{
+					'name': Constants.PLAYER_JOB,
+					'value': 'p.job = {"territory_index": {0}}; return false'.format([_selected_neighborhood_index])
+				},
+			]
+			(map.get_child(_selected_neighborhood_index) as Hood).job_icon.show()
 		NEIGHBORHOOD_ACTION.QUIT_JOB:
-			player.job = {}
+			stat_updates = [
+				{
+					'name': Constants.PLAYER_JOB,
+					'value': 'p.job = {}; return false'
+				},
+			]
+			(map.get_child(_selected_neighborhood_index) as Hood).job_icon.hide()
 		NEIGHBORHOOD_ACTION.RENT:
-			player.money -= neighborhood.rent
-			player.rentals.append(_selected_neighborhood_index)
+			stat_updates = [
+				{'name': Constants.PLAYER_MONEY, 'value': -neighborhood.rent},
+				{
+					'name': Constants.PLAYER_RENTALS,
+					'value': 'p.rentals.append({0}); return false'.format([_selected_neighborhood_index])
+				},
+			]
 			(map.get_child(_selected_neighborhood_index) as Hood).rented_icon.show()
-			neighborhood_menu_status_label.text = 'Territory rented for ${AMOUNT}'.format({
-				'AMOUNT': neighborhood.rent
-			})
 		NEIGHBORHOOD_ACTION.SABOTAGE_FAM_1:
 			pass
 		NEIGHBORHOOD_ACTION.SABOTAGE_FAM_2:
 			pass
 		NEIGHBORHOOD_ACTION.SELL_RENTAL:
-			player.rentals = player.rentals.filter(func (i): return i != _selected_neighborhood_index)
-			player.money += neighborhood.rent
+			stat_updates = [
+				{'name': Constants.PLAYER_MONEY, 'value': neighborhood.rent},
+				{
+					'name': Constants.PLAYER_RENTALS,
+					'value': 'p.rentals = p.rentals.filter(func (i): return i != {0}); return false'.format([_selected_neighborhood_index])
+				},
+			]
 			(map.get_child(_selected_neighborhood_index) as Hood).rented_icon.hide()
-			neighborhood_menu_status_label.text = 'Rental sold for ${AMOUNT}'.format({
-				'AMOUNT': neighborhood.rent
-			})
 		NEIGHBORHOOD_ACTION.SELL_BUSINESS:
 			var index = player.businesses.find(
 				func (b): return b.get('territory_index') == _selected_neighborhood_index
 			)
-			player.businesses.pop_at(index)
-			player.money += neighborhood.cost_to_start_business
-			neighborhood_menu_status_label.text = 'Business sold for ${AMOUNT}'.format({
-				'AMOUNT': neighborhood.cost_to_start_business
-			})
+			stat_updates = [
+				{'name': Constants.PLAYER_MONEY, 'value': neighborhood.cost_to_start_business},
+				{
+					'name': Constants.PLAYER_BUSINESSES,
+					'value': 'p.businesses.pop_at({0}); return false'.format([index])
+				},
+			]
+			(map.get_child(_selected_neighborhood_index) as Hood).company_icon.hide()
 		NEIGHBORHOOD_ACTION.START_BUSINESS:
-			player.money -= neighborhood.cost_to_start_business
-			player.businesses.append({'territory_index': _selected_neighborhood_index})
-			neighborhood_menu_status_label.text = 'Business started for ${AMOUNT}'.format({
-				'AMOUNT': neighborhood.cost_to_start_business
-			})
+			stat_updates = [
+				{'name': Constants.PLAYER_MONEY, 'value': -neighborhood.cost_to_start_business},
+				{
+					'name': Constants.PLAYER_BUSINESSES,
+					'value': 'p.businesses.append({"territory_index": {0}}); return false'.format([_selected_neighborhood_index])
+				},
+			]
+			(map.get_child(_selected_neighborhood_index) as Hood).company_icon.show()
 		NEIGHBORHOOD_ACTION.WORK_FOR_FAM_1:
-			var respect_limits = Constants.STATS_LIMITS.get(Constants.PLAYER_FAMILY_1_RESPECT)
-			var heat_limits = Constants.STATS_LIMITS.get(Constants.PLAYER_HEAT)
-			var street_smart_limits = Constants.STATS_LIMITS.get(Constants.PLAYER_STREET_SMART)
 			var respect = 0.1
 			var money = randi_range(3000, 5000)
 			var heat = snappedf(randf_range(0.2, 0.5), 0.01)
 			var street_smart = snappedf(randf_range(0.1, 0.3), 0.01)
 			
-			neighborhood_menu_status_label.text = 'You have {CHANGE} {DIFF} {STAT}'.format({
-				'CHANGE': 'gained',
-				'STAT': 'dollars',
-				'DIFF': money
-			}) + '\n'
-			neighborhood_menu_status_label.text += 'You have {CHANGE} {DIFF} {STAT}'.format({
-				'CHANGE': 'gained',
-				'STAT': 'family_1_respect',
-				'DIFF': respect
-			}) + '\n'
-			neighborhood_menu_status_label.text += 'You have {CHANGE} {DIFF} {STAT}'.format({
-				'CHANGE': 'gained',
-				'STAT': 'heat',
-				'DIFF': heat
-			}) + '\n'
-			neighborhood_menu_status_label.text += 'You have {CHANGE} {DIFF} {STAT}'.format({
-				'CHANGE': 'gained',
-				'STAT': 'street smart',
-				'DIFF': street_smart
-			}) + '\n'
-			
-			player.family_1_respect = clampf(
-				player.family_1_respect + respect,
-				respect_limits.get('min'),
-				respect_limits.get('max')
-			)
-			player.money += money
-			player.heat = clampf(
-				player.heat + heat,
-				heat_limits.get('min'),
-				heat_limits.get('max')
-			)
-			player.street_smart = clampf(
-				player.street_smart + street_smart,
-				street_smart_limits.get('min'),
-				street_smart_limits.get('max')
-			)
+			stat_updates = [
+				{'name': Constants.PLAYER_FAMILY_1_RESPECT, 'value': respect},
+				{'name': Constants.PLAYER_MONEY, 'value': money},
+				{'name': Constants.PLAYER_HEAT, 'value': heat},
+				{'name': Constants.PLAYER_STREET_SMART, 'value': street_smart},
+			]
 		NEIGHBORHOOD_ACTION.WORK_FOR_FAM_2:
-			var respect_limits = Constants.STATS_LIMITS.get(Constants.PLAYER_FAMILY_2_RESPECT)
-			var heat_limits = Constants.STATS_LIMITS.get(Constants.PLAYER_HEAT)
-			var street_smart_limits = Constants.STATS_LIMITS.get(Constants.PLAYER_STREET_SMART)
 			var respect = 0.1
 			var money = randi_range(2500, 4000)
 			var heat = snappedf(randf_range(0.2, 0.4), 0.01)
 			var street_smart = snappedf(randf_range(0.1, 0.3), 0.01)
 			
-			neighborhood_menu_status_label.text = 'You have {CHANGE} {DIFF} {STAT}'.format({
-				'CHANGE': 'gained',
-				'STAT': 'dollars',
-				'DIFF': money
-			}) + '\n'
-			neighborhood_menu_status_label.text += 'You have {CHANGE} {DIFF} {STAT}'.format({
-				'CHANGE': 'gained',
-				'STAT': 'family_1_respect',
-				'DIFF': respect
-			}) + '\n'
-			neighborhood_menu_status_label.text += 'You have {CHANGE} {DIFF} {STAT}'.format({
-				'CHANGE': 'gained',
-				'STAT': 'heat',
-				'DIFF': heat
-			}) + '\n'
-			neighborhood_menu_status_label.text += 'You have {CHANGE} {DIFF} {STAT}'.format({
-				'CHANGE': 'gained',
-				'STAT': 'street smart',
-				'DIFF': street_smart
-			}) + '\n'
-			
-			player.family_2_respect = clampf(
-				player.family_2_respect + respect,
-				respect_limits.get('min'),
-				respect_limits.get('max')
-			)
-			player.money += money
-			player.heat = clampf(
-				player.heat + heat,
-				heat_limits.get('min'),
-				heat_limits.get('max')
-			)
-			player.street_smart = clampf(
-				player.street_smart + street_smart,
-				street_smart_limits.get('min'),
-				street_smart_limits.get('max')
-			)
+			stat_updates = [
+				{'name': Constants.PLAYER_FAMILY_2_RESPECT, 'value': respect},
+				{'name': Constants.PLAYER_MONEY, 'value': money},
+				{'name': Constants.PLAYER_HEAT, 'value': heat},
+				{'name': Constants.PLAYER_STREET_SMART, 'value': street_smart},
+			]
 	
-	neighborhood_menu_status_label.show()
 	_draw_neighborhood_menu_action_button_options(_selected_neighborhood_index)
+	for stat in stat_updates:
+		_handle_stat_updates(stat)
+	neighborhood_menu.hide()
 	
-	_notify_status_updates()
+	player.actions_left -= 1
+	trigger_menu_description_label.text = '{0}'.format([id])
+	trigger_menu_confirm_button.pressed.connect(_continue_from_neighborhood_menu_action, CONNECT_ONE_SHOT)
+	trigger_menu_confirm_button.show()
+	trigger_menu.show()
+
+
+func _continue_from_neighborhood_menu_action():
+	_hide_trigger_menu()
+	if player.actions_left == 0:
+		_notify_status_updates()
 
 
 func trigger_event(trigger_type = null):
@@ -484,7 +434,8 @@ func trigger_event(trigger_type = null):
 				_handle_stat_updates(stat_update)
 			if outcome.get('trigger'):
 				trigger_menu_confirm_button.pressed.connect(
-					func (): trigger_event(outcome.get('trigger'))
+					func (): trigger_event(outcome.get('trigger')),
+					CONNECT_ONE_SHOT
 				)
 				trigger_menu_confirm_button.show()
 			elif outcome.get('event'):
@@ -499,7 +450,7 @@ func trigger_event(trigger_type = null):
 				)
 				trigger_menu_options_button.show()
 			else:
-				trigger_menu_confirm_button.pressed.connect(_hide_trigger_menu)
+				trigger_menu_confirm_button.pressed.connect(_hide_trigger_menu, CONNECT_ONE_SHOT)
 				trigger_menu_confirm_button.show()
 			break
 	
@@ -509,7 +460,11 @@ func trigger_event(trigger_type = null):
 
 func _handle_stat_updates(stat_update):
 	var stat_name = stat_update.get('name')
-	var old_value = player.get(stat_name)
+	var old_value = (
+		player.get(stat_name).duplicate()
+		if typeof(player.get(stat_name)) == TYPE_ARRAY or typeof(player.get(stat_name)) == TYPE_DICTIONARY
+		else player.get(stat_name)
+	)
 	
 	var update_value = (
 		_evaluateString(stat_update.get('value'))
@@ -533,7 +488,10 @@ func _handle_stat_updates(stat_update):
 		
 	var change_text = (
 		'lost' if (
-			(typeof(new_value) == TYPE_ARRAY and old_value.size() > new_value.size())
+			(
+				(typeof(new_value) == TYPE_ARRAY or typeof(new_value) == TYPE_DICTIONARY)
+				and old_value.size() > new_value.size()
+			)
 			or old_value > new_value
 		)
 		else 'gained'
@@ -543,7 +501,8 @@ func _handle_stat_updates(stat_update):
 		'CHANGE': change_text,
 		'STAT': stat_name,
 		'DIFF': (
-			new_value.size() - old_value.size() if typeof(new_value) == TYPE_ARRAY
+			new_value.size() - old_value.size()
+			if typeof(new_value) == TYPE_ARRAY or typeof(new_value) == TYPE_DICTIONARY
 			else new_value - old_value
 		)
 	}) + '\n'
@@ -573,7 +532,7 @@ func _trigger_menu_option_selected(selected_id, options):
 			
 			for stat_update in option.get('stat_updates', []):
 				_handle_stat_updates(stat_update)
-			trigger_menu_confirm_button.pressed.connect(continue_func)
+			trigger_menu_confirm_button.pressed.connect(continue_func, CONNECT_ONE_SHOT)
 			trigger_menu_confirm_button.show()
 			_save_game.write_savegame()
 			return
@@ -706,7 +665,6 @@ func _calculate_total_income() -> Dictionary:
 
 
 func _notify_status_updates():
-	player.current_month += 1
 	var total_income := _calculate_total_income()
 	for key in total_income:
 		if total_income[key] > 0:
@@ -772,20 +730,22 @@ func _notify_status_updates():
 
 	_save_game.write_savegame()
 	
-	status_notifier_continue_button.pressed.connect(
-		func():
-			status_notifier.hide()
-			status_notifier_details_label.text = ''
-			if player.sanity <= 0:
-				print('player ends')
-			else:
-				trigger_event()
-	)
-	if player.sanity < 0:
-		print('player ends')
+	status_notifier_continue_button.pressed.connect(_continue_next_month)
 	
 	
 	status_notifier.show()
+
+
+func _continue_next_month():
+	player.current_month += 1
+	player.actions_left = 3
+	
+	status_notifier.hide()
+	status_notifier_details_label.text = ''
+	if player.sanity <= 0:
+		print('player ends')
+	else:
+		trigger_event()
 
 
 func _show_stats_menu():

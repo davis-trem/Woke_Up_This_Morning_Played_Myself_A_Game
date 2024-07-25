@@ -15,3 +15,4 @@ extends Resource
 @export var territories_respect := [] # range(-1, 1)[territory_index]
 @export var past_four_triggers := []
 @export var current_month := 0
+@export var actions_left := 3
