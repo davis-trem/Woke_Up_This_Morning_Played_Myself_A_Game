@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://cyn47d5ekbeic"]
+
+[node name="RowNameLabel" type="Label"]
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+text = "Owed"
+horizontal_alignment = 1

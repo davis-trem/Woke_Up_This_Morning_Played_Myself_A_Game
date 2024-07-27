@@ -1,0 +1,10 @@
+[gd_scene format=3 uid="uid://ckwthv87etbis"]
+
+[node name="RowPaidLineEdit" type="LineEdit"]
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_colors/font_uneditable_color = Color(0.529412, 0.529412, 0.529412, 1)
+theme_override_colors/font_placeholder_color = Color(0.529412, 0.529412, 0.529412, 1)
+theme_override_colors/caret_color = Color(0, 0, 0, 1)
+placeholder_text = "$0"
+virtual_keyboard_type = 2
+flat = true

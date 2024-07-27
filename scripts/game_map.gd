@@ -41,9 +41,7 @@ const Hood = preload('res://scripts/hood.gd')
 @onready var stats_menu_businesses_label = $StatsMenu/ColorRect/MarginContainer/GridContainer/BusinessesLabel
 @onready var stats_menu_rentals_label = $StatsMenu/ColorRect/MarginContainer/GridContainer/RentalsLabel
 @onready var stats_menu_close_button = $StatsMenu/ColorRect/MarginContainer/CloseButton
-@onready var status_notifier = $StatusNotifier
-@onready var status_notifier_details_label = $StatusNotifier/MarginContainer/ColorRect/MarginContainer/VBoxContainer/DetailsLabel
-@onready var status_notifier_continue_button = $StatusNotifier/MarginContainer/ColorRect/MarginContainer/VBoxContainer/ContinueButton
+@onready var end_of_month_menu = $EndOfMonthMenu
 @onready var dev_menu = $DevMenu
 @onready var dev_menu_trigger_button = $DevMenu/MarginContainer/ColorRect/MenuButton
 @onready var map: TextureRect = $TerritoryControl/MarginContainer/Map
@@ -123,6 +121,9 @@ func _ready():
 	
 	neighborhood_menu_close_button.pressed.connect(_close_neighborhood_menu)
 	neighborhood_menu_actions_button.get_popup().id_pressed.connect(_neighborhood_menu_action_selected)
+	end_of_month_menu.on_continue = _continue_next_month
+	end_of_month_menu.handle_lost_rental = _handle_lost_rental
+	end_of_month_menu.handle_lost_business = _handle_lost_business
 	_create_or_load_save()
 	
 	for type in events.triggers:
@@ -376,6 +377,10 @@ func _neighborhood_menu_action_selected(id):
 	_draw_neighborhood_menu_action_button_options(_selected_neighborhood_index)
 	for stat in stat_updates:
 		_handle_stat_updates(stat)
+	
+	if id == NEIGHBORHOOD_ACTION.SELL_RENTAL:
+		_handle_lost_rental(_selected_neighborhood_index)
+	
 	neighborhood_menu.hide()
 	
 	player.actions_left -= 1
@@ -492,7 +497,10 @@ func _handle_stat_updates(stat_update):
 				(typeof(new_value) == TYPE_ARRAY or typeof(new_value) == TYPE_DICTIONARY)
 				and old_value.size() > new_value.size()
 			)
-			or old_value > new_value
+			or (
+				(typeof(new_value) != TYPE_ARRAY and typeof(new_value) != TYPE_DICTIONARY)
+				and old_value > new_value
+			)
 		)
 		else 'gained'
 	)
@@ -641,7 +649,7 @@ func _calculate_total_expenses() -> Dictionary:
 
 func _calculate_total_income() -> Dictionary:
 	var job_payout = 0
-	if player.job and player.job.get('territory_index'):
+	if player.job and player.job.has('territory_index'):
 		job_payout = neighborhoods[player.job.get('territory_index')].job_payout
 	
 	var total_business_payout = 0
@@ -665,11 +673,12 @@ func _calculate_total_income() -> Dictionary:
 
 
 func _notify_status_updates():
+	end_of_month_menu.details_label.text = ''
 	var total_income := _calculate_total_income()
 	for key in total_income:
 		if total_income[key] > 0:
-			player.money + total_income[key]
-			status_notifier_details_label.text += tr(key).format({
+			player.money += total_income[key]
+			end_of_month_menu.details_label.text += tr(key).format({
 				'payout': total_income[key],
 				'businesses': ', '.join(
 					player.businesses.map(
@@ -679,73 +688,48 @@ func _notify_status_updates():
 				'fam_1': 'fam_1',
 				'fam_2': 'fam_2'
 			}) + '\n'
-	status_notifier_details_label.text += '\n'
 	
-	var total_expenses := _calculate_total_expenses()
-	var cannot_afford_details = ''
-	if total_expenses.get('cannot_afford').get('retails').size() > 0:
-		player.rentals = player.rentals.filter(
-			func (ti): !total_expenses.get('cannot_afford').get('retails').has(ti)
-		)
-		# Update board to show as no longer rented
-		for hood_index in total_expenses.get('cannot_afford').get('retails'):
-			(map.get_child(hood_index) as Hood).rented_icon.hide()
-		cannot_afford_details += tr('cannot_afford_retails').format({
-			'rentals': ', '.join(total_expenses.get('cannot_afford').get('retails').map(
-				func (ti): return neighborhoods[ti].name
-			))
-		}) + '\n'
-	if total_expenses.get('cannot_afford').get('businesses').size() > 0:
-		player.businesses = player.businesses.filter(
-			func (b): !total_expenses.get('cannot_afford').get('businesses').has(b.get('territory_index'))
-		)
-		cannot_afford_details += tr('cannot_afford_businesses').format({
-			'businesses': ', '.join(total_expenses.get('cannot_afford').get('businesses').map(
-				func (b): return neighborhoods[b.get('territory_index')].name
-			))
-		}) + '\n'
-	
-	for key in total_expenses.get('expenses'):
-		if total_expenses.get('expenses')[key] > 0:
-			player.money -= total_expenses.get('expenses').get(key)
-			status_notifier_details_label.text += tr(key).format({
-				'expense': total_expenses.get('expenses').get(key),
-				'rentals': ', '.join(player.rentals.map(
-					func (ti): return neighborhoods[ti].name
-				)),
-				'businesses': ', '.join(player.businesses.map(
-					func (b): return neighborhoods[b.get('territory_index')].name
-				))
-			}) + '\n'
-	status_notifier_details_label.text += cannot_afford_details + '\n'
-	
-	
-	if player.rentals.size() == 0:
-		player.sanity -= 0.3
-		status_notifier_details_label.text += tr('lost_sanity_because_homeless')\
-			.format({'amount': 0.3}) + '\n\n'
-	
-	if player.sanity <= 0:
-		status_notifier_details_label.text += tr('player_died')
-
-	_save_game.write_savegame()
-	
-	status_notifier_continue_button.pressed.connect(_continue_next_month)
-	
-	
-	status_notifier.show()
+	end_of_month_menu.player = player
+	end_of_month_menu.neighborhoods = neighborhoods
+	end_of_month_menu.render()
 
 
 func _continue_next_month():
+	_save_game.write_savegame()
 	player.current_month += 1
 	player.actions_left = 3
 	
-	status_notifier.hide()
-	status_notifier_details_label.text = ''
+	end_of_month_menu.hide()
+	
 	if player.sanity <= 0:
 		print('player ends')
 	else:
 		trigger_event()
+
+
+func _handle_lost_rental(hood_index: int):
+	player.rentals = player.rentals.filter(func (hi): return hi != hood_index)
+	if player.job and player.job.get('territory_index') == hood_index:
+		player.job = {}
+	var business_index = player.businesses.find(
+		func (b): return b.get('territory_index') == hood_index
+	)
+	if business_index != -1:
+		player.businesses.pop_at(business_index)
+	
+	(map.get_child(hood_index) as Hood).rented_icon.hide()
+	(map.get_child(hood_index) as Hood).company_icon.hide()
+	(map.get_child(hood_index) as Hood).job_icon.hide()
+
+
+func _handle_lost_business(hood_index: int):
+	var business_index = player.businesses.find(
+		func (b): return b.get('territory_index') == hood_index
+	)
+	if business_index != -1:
+		player.businesses.pop_at(business_index)
+	
+	(map.get_child(hood_index) as Hood).company_icon.hide()
 
 
 func _show_stats_menu():
