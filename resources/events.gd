@@ -474,7 +474,7 @@ const Constants = preload('res://scripts/constants.gd')
 		]
 	},
 	Constants.TRIGGER_APPROACHED_BY_FAMILY_1_TO_ROB_FROM_JOB: {
-		'condition': 'return not p.job.is_empty() and p.family_1_respect > 0',
+		'condition': 'return p.job != -1 and p.family_1_respect > 0',
 		'outcomes': [
 			{
 				'action': 'help family_1 rob from job',
@@ -484,7 +484,7 @@ const Constants = preload('res://scripts/constants.gd')
 		]
 	},
 	Constants.TRIGGER_APPROACHED_BY_FAMILY_2_TO_ROB_FROM_JOB: {
-		'condition': 'return not p.job.is_empty() and p.family_2_respect > 0',
+		'condition': 'return p.job != -1 and p.family_2_respect > 0',
 		'outcomes': [
 			{
 				'action': 'help family_2 rob from job',

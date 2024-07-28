@@ -83,7 +83,7 @@ var neighborhood_actions = [
 		else {'key': NEIGHBORHOOD_ACTION.SELL_BUSINESS, 'label': 'Sell business'}),
 	func (p: Player, n: NeighborhoodStats, ni: int): return (
 		{'key': NEIGHBORHOOD_ACTION.QUIT_JOB, 'label': 'Quit job'}
-		if p.job.get('territory_index') == ni
+		if p.job == ni
 		else {'key': NEIGHBORHOOD_ACTION.GET_JOB,
 			'label': 'Get job',
 			'disable': not p.rentals.has(ni),
@@ -294,7 +294,7 @@ func _neighborhood_menu_action_selected(id):
 			stat_updates = [
 				{
 					'name': Constants.PLAYER_JOB,
-					'value': 'p.job = {"territory_index": {0}}; return false'.format([_selected_neighborhood_index])
+					'value': 'p.job = {0}; return false'.format([_selected_neighborhood_index])
 				},
 			]
 			(map.get_child(_selected_neighborhood_index) as Hood).job_icon.show()
@@ -302,7 +302,7 @@ func _neighborhood_menu_action_selected(id):
 			stat_updates = [
 				{
 					'name': Constants.PLAYER_JOB,
-					'value': 'p.job = {}; return false'
+					'value': 'p.job = -1; return false'
 				},
 			]
 			(map.get_child(_selected_neighborhood_index) as Hood).job_icon.hide()
@@ -653,8 +653,8 @@ func _calculate_total_expenses() -> Dictionary:
 
 func _calculate_total_income() -> Dictionary:
 	var job_payout = 0
-	if player.job and player.job.has('territory_index'):
-		job_payout = neighborhoods[player.job.get('territory_index')].job_payout
+	if player.job != -1:
+		job_payout = neighborhoods[player.job].job_payout
 	
 	var total_business_payout = 0
 	for business in player.businesses:
@@ -713,8 +713,8 @@ func _continue_next_month():
 
 func _handle_lost_rental(hood_index: int):
 	player.rentals = player.rentals.filter(func (hi): return hi != hood_index)
-	if player.job and player.job.get('territory_index') == hood_index:
-		player.job = {}
+	if player.job == hood_index:
+		player.job = -1
 	var business_index = player.businesses.find(
 		func (b): return b.get('territory_index') == hood_index
 	)
