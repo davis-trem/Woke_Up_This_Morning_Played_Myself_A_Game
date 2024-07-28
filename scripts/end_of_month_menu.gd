@@ -39,7 +39,7 @@ func render() -> void:
 		_add_new_row(hood_index, hood.name, 'Rental', hood.rent, false)
 		
 	for business in player.businesses:
-		var hood_index = business.get('territory_index')
+		var hood_index = business.get('hood_index')
 		var hood := neighborhoods[hood_index]
 		_add_new_row(hood_index, hood.name, 'Business', hood.cost_to_run_business, false)
 		if business.get('extortioner'):
