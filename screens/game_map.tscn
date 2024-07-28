@@ -240,7 +240,7 @@ text = "Actions"
 [node name="HorizontalSpacer5" parent="StatsPreviewControl/Panel/MarginContainer/HBoxContainer" instance=ExtResource("2_4obur")]
 layout_mode = 2
 
-[node name="Button" type="Button" parent="StatsPreviewControl/Panel/MarginContainer/HBoxContainer"]
+[node name="EndMonthButton" type="Button" parent="StatsPreviewControl/Panel/MarginContainer/HBoxContainer"]
 layout_mode = 2
 text = "End Month"
 
@@ -674,5 +674,5 @@ grow_vertical = 2
 text = "Select Trigger"
 flat = false
 
-[connection signal="pressed" from="StatsPreviewControl/Panel/MarginContainer/HBoxContainer/Button" to="." method="_on_button_pressed"]
+[connection signal="pressed" from="StatsPreviewControl/Panel/MarginContainer/HBoxContainer/EndMonthButton" to="." method="_on_end_month_button_pressed"]
 [connection signal="pressed" from="StatsPreviewControl/Panel/MarginContainer/HBoxContainer/ShowStatsButton" to="." method="_on_show_stats_button_pressed"]

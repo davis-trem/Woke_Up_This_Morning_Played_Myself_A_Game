@@ -393,7 +393,11 @@ func _neighborhood_menu_action_selected(id):
 func _continue_from_neighborhood_menu_action():
 	_hide_trigger_menu()
 	if player.actions_left == 0:
-		_notify_status_updates()
+		_show_end_of_month_menu()
+	else:
+		var odds = randi_range(0, 3) # Trigger event third of the time
+		if odds == 0:
+			trigger_event()
 
 
 func trigger_event(trigger_type = null):
@@ -672,7 +676,7 @@ func _calculate_total_income() -> Dictionary:
 	}
 
 
-func _notify_status_updates():
+func _show_end_of_month_menu():
 	end_of_month_menu.details_label.text = ''
 	var total_income := _calculate_total_income()
 	for key in total_income:
@@ -760,5 +764,5 @@ func _on_show_stats_button_pressed():
 	_show_stats_menu()
 
 
-func _on_button_pressed() -> void:
-	_notify_status_updates()
+func _on_end_month_button_pressed() -> void:
+	_show_end_of_month_menu()
