@@ -449,19 +449,6 @@ size_flags_horizontal = 3
 theme_override_colors/font_color = Color(0, 0, 0, 1)
 text = "$1000"
 
-[node name="Label5" type="Label" parent="StatsMenu/ColorRect/MarginContainer/GridContainer"]
-layout_mode = 2
-size_flags_horizontal = 3
-theme_override_colors/font_color = Color(0, 0, 0, 1)
-text = "Expenses:"
-horizontal_alignment = 2
-
-[node name="ExpensesLabel" type="Label" parent="StatsMenu/ColorRect/MarginContainer/GridContainer"]
-layout_mode = 2
-size_flags_horizontal = 3
-theme_override_colors/font_color = Color(0, 0, 0, 1)
-text = "$1000"
-
 [node name="Label7" type="Label" parent="StatsMenu/ColorRect/MarginContainer/GridContainer"]
 layout_mode = 2
 size_flags_horizontal = 3

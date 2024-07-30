@@ -32,7 +32,6 @@ const Hood = preload('res://scripts/hood.gd')
 @onready var stats_menu = $StatsMenu
 @onready var stats_menu_money_label = $StatsMenu/ColorRect/MarginContainer/GridContainer/MoneyLabel
 @onready var stats_menu_income_label = $StatsMenu/ColorRect/MarginContainer/GridContainer/IncomeLabel
-@onready var stats_menu_expenses_label = $StatsMenu/ColorRect/MarginContainer/GridContainer/ExpensesLabel
 @onready var stats_menu_fam_1_progress_bar = $StatsMenu/ColorRect/MarginContainer/GridContainer/Fam1RespectProgressBar
 @onready var stats_menu_fam_2_progress_bar = $StatsMenu/ColorRect/MarginContainer/GridContainer/Fam2RespectProgressBar
 @onready var stats_menu_heat_progress_bar = $StatsMenu/ColorRect/MarginContainer/GridContainer/HeatProgressBar
@@ -571,24 +570,6 @@ func _calculate_outcomes_accumulated_chance(outcomes: Array) -> Array:
 	return outcomes_accumulated_chance
 
 
-func _calculate_total_expenses_amount() -> int:
-	var total_rent = 0
-	for hood_index in player.rentals:
-		total_rent += neighborhoods[hood_index].rent
-	
-	var total_business_costs = 0
-	for business in player.businesses:
-		total_business_costs += neighborhoods[business.get('hood_index')].cost_to_run_business
-		if business.get('extortioner'):
-			pass # TODO
-			
-	var total_loan_payments = 0
-	for loan in player.loans:
-		pass # TODO
-	
-	return total_rent + total_business_costs + total_loan_payments
-
-
 func _calculate_total_expenses() -> Dictionary:
 	var cannot_afford_rentals = []
 	var cannot_afford_businesses = []
@@ -721,7 +702,6 @@ func _show_stats_menu():
 	stats_menu_income_label.text = '${0}'.format([
 		_calculate_total_income().values().reduce(func(total, num): return total + num, 0)
 	])
-	stats_menu_expenses_label.text = '${0}'.format([_calculate_total_expenses_amount()])
 	stats_menu_fam_1_progress_bar.value = player.family_1_respect
 	stats_menu_fam_2_progress_bar.value = player.family_2_respect
 	stats_menu_heat_progress_bar.value = player.heat
