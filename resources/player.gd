@@ -7,7 +7,7 @@ extends Resource
 @export var family_2_respect := 0.0
 @export var heat := 0.0
 @export var job := -1 # hood_index
-@export var loans := []
+@export var loans := [] # {by:enum(fam_1, fam_2, bank), rate:float, owed:int}
 @export var money := 0
 @export var rentals := [] # hood_index[]
 @export var sanity := 1.0

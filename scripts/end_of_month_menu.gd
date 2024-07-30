@@ -51,8 +51,10 @@ func render() -> void:
 				true
 			)
 	
-	for loan in player.loans:
-		_add_new_row(-1, 'Loaner', 'Loan', 0, true) # TODO
+	for loan_index in player.loans.size():
+		var loan = player.loans[loan_index]
+		var owed = loan['owed'] + (loan['owed'] * loan['rate'])
+		_add_new_row(loan_index, loan['by'], 'Loan', owed, true)
 	
 	show()
 
@@ -121,7 +123,11 @@ func _update_inputs_status(index: int) -> void:
 		])
 		
 	if rows[index]['allow_step']:
-		rows[index]['slider'].max_value = rows[index]['amount'] if rows[index]['amount'] < money else money
+		rows[index]['slider'].max_value = (
+			rows[index]['amount']
+			if rows[index]['amount'] < money
+			else rows[index]['value'] + money
+		)
 	else:
 		rows[index]['slider'].max_value = rows[index]['amount']
 
@@ -156,6 +162,8 @@ func _on_continue_button_pressed():
 						if player.businesses[i]['hood_index'] == row['hood_index']:
 							player.businesses[i]['extortion']['owed'] = row['amount'] - row['value']
 							break
+				'Loan':
+					player.loans[row['hood_index']]['owed'] = row['amount'] - row['value']
 	
 	player.money -= expenses
 	if player.rentals.size() == 0:

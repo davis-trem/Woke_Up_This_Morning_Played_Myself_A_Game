@@ -31,6 +31,12 @@ const EXTORTION_RATE_LIMITS = {
 	FAM_2: {'min': 0.3, 'max': 0.51},
 }
 
+const LOAN_RATE_LIMITS = {
+	FAM_1: {'min': 0.08, 'max': 0.121},
+	FAM_2: {'min': 0.1, 'max': 0.151},
+	BANK: {'min': 0.15, 'max': 0.21},
+}
+
 const EVENT_BANK_OFFERS_LOAN = 'event_bank_offers_loan'
 const EVENT_FAMILY_1_OFFERS_LOAN = 'event_family_1_offers_loan'
 const EVENT_FAMILY_1_OFFERS_WORK = 'event_family_1_offers_work'

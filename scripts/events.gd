@@ -11,7 +11,11 @@ static var events := {
 			{
 				'type': 'accept',
 				'stat_updates': [
-					{'name': Constants.PLAYER_MONEY, 'value': 10000}
+					{'name': Constants.PLAYER_MONEY, 'value': 15000},
+					{
+						'name': Constants.PLAYER_LOANS,
+						'value': func (p: Player, n: Array[NeighborhoodStats]): p.loans.append({'by': Constants.BANK, 'rate': snappedf(Constants.LOAN_RATE_LIMITS[Constants.BANK].min, Constants.LOAN_RATE_LIMITS[Constants.BANK].max), 'owed': 15000}); return false
+					},
 				]
 			},
 			{
@@ -24,7 +28,11 @@ static var events := {
 			{
 				'type': 'accept',
 				'stat_updates': [
-					{'name': Constants.PLAYER_MONEY, 'value': 500}
+					{'name': Constants.PLAYER_MONEY, 'value': 5000},
+					{
+						'name': Constants.PLAYER_LOANS,
+						'value': func (p: Player, n: Array[NeighborhoodStats]): p.loans.append({'by': Constants.FAM_1, 'rate': snappedf(Constants.LOAN_RATE_LIMITS[Constants.FAM_1].min, Constants.LOAN_RATE_LIMITS[Constants.FAM_1].max), 'owed': 5000}); return false
+					},
 				]
 			},
 			{
@@ -124,7 +132,11 @@ static var events := {
 			{
 				'type': 'accept',
 				'stat_updates': [
-					{'name': Constants.PLAYER_MONEY, 'value': 800}
+					{'name': Constants.PLAYER_MONEY, 'value': 10000},
+					{
+						'name': Constants.PLAYER_LOANS,
+						'value': func (p: Player, n: Array[NeighborhoodStats]): p.loans.append({'by': Constants.FAM_2, 'rate': snappedf(Constants.LOAN_RATE_LIMITS[Constants.FAM_2].min, Constants.LOAN_RATE_LIMITS[Constants.FAM_2].max), 'owed': 10000}); return false
+					},
 				]
 			},
 			{
