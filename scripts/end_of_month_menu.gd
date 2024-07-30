@@ -42,8 +42,14 @@ func render() -> void:
 		var hood_index = business.get('hood_index')
 		var hood := neighborhoods[hood_index]
 		_add_new_row(hood_index, hood.name, 'Business', hood.cost_to_run_business, false)
-		if business.get('extortioner'):
-			_add_new_row(hood_index, hood.name, 'Business Extortion', hood.cost_to_run_business, true) # TODO
+		if business.get('extortion'):
+			_add_new_row(
+				hood_index,
+				hood.name,
+				'Business Extortion',
+				(hood.business_payout * business['extortion']['rate']) + business['extortion']['owed'],
+				true
+			)
 	
 	for loan in player.loans:
 		_add_new_row(-1, 'Loaner', 'Loan', 0, true) # TODO
@@ -143,6 +149,13 @@ func _on_continue_button_pressed():
 					handle_lost_rental.call(row['hood_index'])
 				'Business':
 					handle_lost_business.call(row['hood_index'])
+		elif row['allow_step']:
+			match row['type']:
+				'Business Extortion':
+					for i in player.businesses.size():
+						if player.businesses[i]['hood_index'] == row['hood_index']:
+							player.businesses[i]['extortion']['owed'] = row['amount'] - row['value']
+							break
 	
 	player.money -= expenses
 	if player.rentals.size() == 0:

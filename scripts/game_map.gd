@@ -577,11 +577,11 @@ func _calculate_outcomes_accumulated_chance(outcomes: Array) -> Array:
 
 func _evaluateString(command: String):
 	var script = GDScript.new()
-	script.set_source_code('func eval(p):' + command)
+	script.set_source_code('func eval(p, n):' + command)
 	script.reload()
 	var ref = RefCounted.new()
 	ref.set_script(script)
-	return ref.eval(player)
+	return ref.eval(player, neighborhoods)
 
 
 func _calculate_total_expenses_amount() -> int:

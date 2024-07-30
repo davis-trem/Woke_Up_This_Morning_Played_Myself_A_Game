@@ -67,12 +67,12 @@ const Constants = preload('res://scripts/constants.gd')
 			}
 		]
 	},
-	Constants.EVENT_FAMILY_1_WANTS_TO_EXTORT_BUSINESS: { # TODO: fix
+	Constants.EVENT_FAMILY_1_WANTS_TO_EXTORT_BUSINESS: {
 		'options': [
 			{
 				'type': 'accept',
 				'stat_updates': [
-					{'name': Constants.PLAYER_MONEY, 'value': -1000},
+					{'name': Constants.PLAYER_BUSINESSES, 'value': 'var biz = p.businesses.reduce(func(t, b): return b if t == -1 and not b.has("extortion") and n[b.get("hood_index")].family_1_ownership > 0 else t, -1); var rate = snappedf(randf_range(Constants.EXTORTION_RATE_LIMITS["fam_1"]["min"], Constants.EXTORTION_RATE_LIMITS["fam_1"]["max"]), 0.01); biz["extortion"] = {"by":"fam_1", "rate":rate, "owed":0}; return false'}
 				]
 			},
 			{
@@ -167,12 +167,12 @@ const Constants = preload('res://scripts/constants.gd')
 			}
 		]
 	},
-	Constants.EVENT_FAMILY_2_WANTS_TO_EXTORT_BUSINESS: { # TODO: fix
+	Constants.EVENT_FAMILY_2_WANTS_TO_EXTORT_BUSINESS: {
 		'options': [
 			{
 				'type': 'accept',
 				'stat_updates': [
-					{'name': Constants.PLAYER_MONEY, 'value': -700},
+					{'name': Constants.PLAYER_BUSINESSES, 'value': 'var biz = p.businesses.reduce(func(t, b): return b if t == -1 and not b.has("extortion") and n[b.get("hood_index")].family_2_ownership > 0 else t, -1); var rate = snappedf(randf_range(Constants.EXTORTION_RATE_LIMITS["fam_2"]["min"], Constants.EXTORTION_RATE_LIMITS["fam_2"]["max"]), 0.01); biz["extortion"] = {"by":"fam_2", "rate":rate, "owed":0}; return false'}
 				]
 			},
 			{
@@ -570,7 +570,7 @@ const Constants = preload('res://scripts/constants.gd')
 		]
 	},
 	Constants.TRIGGER_FAMILY_1_WANTS_TO_EXTORT_BUSINESS: {
-		'condition': 'return p.businesses.size() > 0 and p.family_1_respect < 0.2',
+		'condition': 'var hi = p.businesses.reduce(func(t, b): return b.get("hood_index") if t == -1 and not b.has("extortion") and n[b.get("hood_index")].family_1_ownership > 0 else t, -1); return hi != -1 and p.family_1_respect > 0.5',
 		'outcomes': [
 			{
 				'action': 'succeed',
@@ -580,7 +580,7 @@ const Constants = preload('res://scripts/constants.gd')
 		]
 	},
 	Constants.TRIGGER_FAMILY_2_WANTS_TO_EXTORT_BUSINESS: {
-		'condition': 'return p.businesses.size() > 0 and p.family_2_respect < 0.2',
+		'condition': 'var hi = p.businesses.reduce(func(t, b): return b.get("hood_index") if t == -1 and not b.has("extortion") and n[b.get("hood_index")].family_2_ownership > 0 else t, -1); return hi != -1 and p.family_2_respect > 0.5',
 		'outcomes': [
 			{
 				'action': 'succeed',

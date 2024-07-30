@@ -22,6 +22,15 @@ const STATS_LIMITS = {
 	PLAYER_TERRITORIES_RESPECT: {'min': -1.0, 'max': 1.0},
 }
 
+const FAM_1 = 'fam_1'
+const FAM_2 = 'fam_2'
+const BANK = 'bank'
+
+const EXTORTION_RATE_LIMITS = {
+	FAM_1: {'min': 0.4, 'max': 0.61},
+	FAM_2: {'min': 0.3, 'max': 0.51},
+}
+
 const EVENT_BANK_OFFERS_LOAN = 'event_bank_offers_loan'
 const EVENT_FAMILY_1_OFFERS_LOAN = 'event_family_1_offers_loan'
 const EVENT_FAMILY_1_OFFERS_WORK = 'event_family_1_offers_work'
