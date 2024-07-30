@@ -1,10 +1,10 @@
 extends Control
 
-const Events = preload('res://resources/events.gd')
 const NeighborhoodStats = preload('res://resources/neighborhood_stats.gd')
 const Player = preload('res://resources/player.gd')
 const SaveGame = preload('res://resources/save_game.gd')
 const Constants = preload('res://scripts/constants.gd')
+const Events = preload('res://scripts/events.gd')
 const Hood = preload('res://scripts/hood.gd')
 
 @onready var neighborhood_menu = $NeighborhoodMenu
@@ -45,8 +45,6 @@ const Hood = preload('res://scripts/hood.gd')
 @onready var dev_menu = $DevMenu
 @onready var dev_menu_trigger_button = $DevMenu/MarginContainer/ColorRect/MenuButton
 @onready var map: TextureRect = $TerritoryControl/MarginContainer/Map
-
-@onready var events = Events.new()
 
 enum NEIGHBORHOOD_ACTION {
 	DO_CRIME,
@@ -126,7 +124,7 @@ func _ready():
 	end_of_month_menu.handle_lost_business = _handle_lost_business
 	_create_or_load_save()
 	
-	for type in events.triggers:
+	for type in Events.triggers:
 		dev_menu_trigger_button.get_popup().add_item(type)
 	dev_menu_trigger_button.get_popup().id_pressed.connect(
 		func (index):
@@ -152,14 +150,12 @@ func _process(delta):
 func _create_or_load_save():
 	if not start_new_game and SaveGame.save_exists():
 		_save_game = SaveGame.load_savegame() as SaveGame
-		events = _save_game.events
 		player = _save_game.player
 		_draw_territories(true)
 	else:
 		_save_game = SaveGame.new()
 		player = Player.new()
 		_save_game.player = player
-		_save_game.events = events
 		_draw_territories()
 		_assign_player_to_neiborhood()
 		_save_game.write_savegame()
@@ -298,7 +294,7 @@ func _neighborhood_menu_action_selected(id):
 			stat_updates = [
 				{
 					'name': Constants.PLAYER_JOB,
-					'value': 'p.job = {0}; return false'.format([_selected_neighborhood_index])
+					'value': func (p: Player, n: Array[NeighborhoodStats]): p.job = _selected_neighborhood_index; return false
 				},
 			]
 			(map.get_child(_selected_neighborhood_index) as Hood).job_icon.show()
@@ -306,7 +302,7 @@ func _neighborhood_menu_action_selected(id):
 			stat_updates = [
 				{
 					'name': Constants.PLAYER_JOB,
-					'value': 'p.job = -1; return false'
+					'value': func (p: Player, n: Array[NeighborhoodStats]): p.job = -1; return false
 				},
 			]
 			(map.get_child(_selected_neighborhood_index) as Hood).job_icon.hide()
@@ -315,7 +311,7 @@ func _neighborhood_menu_action_selected(id):
 				{'name': Constants.PLAYER_MONEY, 'value': -neighborhood.rent},
 				{
 					'name': Constants.PLAYER_RENTALS,
-					'value': 'p.rentals.append({0}); return false'.format([_selected_neighborhood_index])
+					'value': func (p: Player, n: Array[NeighborhoodStats]): p.rentals.append(_selected_neighborhood_index); return false
 				},
 			]
 			(map.get_child(_selected_neighborhood_index) as Hood).rented_icon.show()
@@ -328,7 +324,7 @@ func _neighborhood_menu_action_selected(id):
 				{'name': Constants.PLAYER_MONEY, 'value': neighborhood.rent},
 				{
 					'name': Constants.PLAYER_RENTALS,
-					'value': 'p.rentals = p.rentals.filter(func (i): return i != {0}); return false'.format([_selected_neighborhood_index])
+					'value': func (p: Player, n: Array[NeighborhoodStats]): p.rentals = p.rentals.filter(func (i): return i != _selected_neighborhood_index); return false
 				},
 			]
 			(map.get_child(_selected_neighborhood_index) as Hood).rented_icon.hide()
@@ -337,7 +333,7 @@ func _neighborhood_menu_action_selected(id):
 				{'name': Constants.PLAYER_MONEY, 'value': neighborhood.cost_to_start_business},
 				{
 					'name': Constants.PLAYER_BUSINESSES,
-					'value': 'p.businesses = p.businesses.filter(func (b): return b.get("hood_index") != {0}); return false'.format([_selected_neighborhood_index])
+					'value': func (p: Player, n: Array[NeighborhoodStats]): p.businesses = p.businesses.filter(func (b): return b.get('hood_index') != _selected_neighborhood_index); return false
 				},
 			]
 			(map.get_child(_selected_neighborhood_index) as Hood).company_icon.hide()
@@ -346,7 +342,7 @@ func _neighborhood_menu_action_selected(id):
 				{'name': Constants.PLAYER_MONEY, 'value': -neighborhood.cost_to_start_business},
 				{
 					'name': Constants.PLAYER_BUSINESSES,
-					'value': 'p.businesses.append({"hood_index": {0}}); return false'.format([_selected_neighborhood_index])
+					'value': func (p: Player, n: Array[NeighborhoodStats]): p.businesses.append({"hood_index": _selected_neighborhood_index}); return false
 				},
 			]
 			(map.get_child(_selected_neighborhood_index) as Hood).company_icon.show()
@@ -410,22 +406,22 @@ func trigger_event(trigger_type = null):
 	
 	var applicable_outcomes = [];
 	if trigger_type != null:
-		for outcome in events.triggers[trigger_type].get('outcomes'):
+		for outcome in Events.triggers[trigger_type].get('outcomes'):
 			if outcome.get('triggered_by') == null:
 				outcome['triggered_by'] = trigger_type
-		applicable_outcomes = events.triggers[trigger_type].get('outcomes')
+		applicable_outcomes = Events.triggers[trigger_type].get('outcomes')
 	else:
-		for type in events.triggers:
-			var condition = events.triggers[type].get('condition')
+		for type in Events.triggers:
+			var condition = Events.triggers[type].get('condition')
 			if (
 				not player.past_four_triggers.has(type)
-				and typeof(condition) == TYPE_STRING
-				and _evaluateString(condition)
+				and typeof(condition) == TYPE_CALLABLE
+				and condition.call(player, neighborhoods)
 			):
-				for outcome in events.triggers[type].get('outcomes'):
+				for outcome in Events.triggers[type].get('outcomes'):
 					if outcome.get('triggered_by') == null:
 						outcome['triggered_by'] = type
-				applicable_outcomes.append_array(events.triggers[type].get('outcomes'))
+				applicable_outcomes.append_array(Events.triggers[type].get('outcomes'))
 	
 	if applicable_outcomes.size() == 0:
 		return
@@ -449,7 +445,7 @@ func trigger_event(trigger_type = null):
 				)
 				trigger_menu_confirm_button.show()
 			elif outcome.get('event'):
-				var event_options = events.events.get(outcome.get('event')).get('options')
+				var event_options = Events.events.get(outcome.get('event')).get('options')
 				for option in event_options:
 					trigger_menu_options_button.get_popup().add_item(option.get('type'))
 				trigger_menu_options_button.get_popup().id_pressed.connect(
@@ -477,8 +473,8 @@ func _handle_stat_updates(stat_update):
 	)
 	
 	var update_value = (
-		_evaluateString(stat_update.get('value'))
-		if typeof(stat_update.get('value')) == TYPE_STRING
+		stat_update.get('value').call(player, neighborhoods)
+		if typeof(stat_update.get('value')) == TYPE_CALLABLE
 		else stat_update.get('value')
 	)
 	
@@ -556,15 +552,15 @@ func _calculate_outcomes_accumulated_chance(outcomes: Array) -> Array:
 	var accumulated_chance = 0
 	for outcome in outcomes:
 		var meets_stat_requirements = true
-		for stat_requirement in outcome.get('stat_requirements', []):
-			if not _evaluateString(stat_requirement):
+		for stat_requirement: Callable in outcome.get('stat_requirements', []):
+			if not stat_requirement.call(player, neighborhoods):
 				meets_stat_requirements = false
 				break
 		if not meets_stat_requirements:
 			continue
 	
-		for chance_multipler in outcome.get('chance_multiplers', []):
-			accumulated_chance += _evaluateString(chance_multipler)
+		for chance_multipler: Callable in outcome.get('chance_multiplers', []):
+			accumulated_chance += chance_multipler.call(player, neighborhoods)
 		accumulated_chance += outcome.get('chance')
 		
 		outcomes_accumulated_chance.append(outcome)
@@ -573,15 +569,6 @@ func _calculate_outcomes_accumulated_chance(outcomes: Array) -> Array:
 		func (a, b): return a.get('accumulated_chance') < b.get('accumulated_chance')
 	)
 	return outcomes_accumulated_chance
-
-
-func _evaluateString(command: String):
-	var script = GDScript.new()
-	script.set_source_code('func eval(p, n):' + command)
-	script.reload()
-	var ref = RefCounted.new()
-	ref.set_script(script)
-	return ref.eval(player, neighborhoods)
 
 
 func _calculate_total_expenses_amount() -> int:

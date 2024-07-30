@@ -1,9 +1,11 @@
 class_name Events
-extends Resource
+extends Node
 
+const NeighborhoodStats = preload('res://resources/neighborhood_stats.gd')
+const Player = preload('res://resources/player.gd')
 const Constants = preload('res://scripts/constants.gd')
 
-@export var events := {
+static var events := {
 	Constants.EVENT_BANK_OFFERS_LOAN: {
 		'options': [
 			{
@@ -72,7 +74,7 @@ const Constants = preload('res://scripts/constants.gd')
 			{
 				'type': 'accept',
 				'stat_updates': [
-					{'name': Constants.PLAYER_BUSINESSES, 'value': 'var biz = p.businesses.reduce(func(t, b): return b if t == -1 and not b.has("extortion") and n[b.get("hood_index")].family_1_ownership > 0 else t, -1); var rate = snappedf(randf_range(Constants.EXTORTION_RATE_LIMITS["fam_1"]["min"], Constants.EXTORTION_RATE_LIMITS["fam_1"]["max"]), 0.01); biz["extortion"] = {"by":"fam_1", "rate":rate, "owed":0}; return false'}
+					{'name': Constants.PLAYER_BUSINESSES, 'value': func (p: Player, n: Array[NeighborhoodStats]): var biz = p.businesses.reduce(func(t, b): return b if t == -1 and not b.has('extortion') and n[b.get('hood_index')].family_1_ownership > 0 else t, -1); var rate = snappedf(randf_range(Constants.EXTORTION_RATE_LIMITS['fam_1']['min'], Constants.EXTORTION_RATE_LIMITS['fam_1']['max']), 0.01); biz['extortion'] = {'by':'fam_1', 'rate':rate, 'owed':0}; return false}
 				]
 			},
 			{
@@ -172,7 +174,7 @@ const Constants = preload('res://scripts/constants.gd')
 			{
 				'type': 'accept',
 				'stat_updates': [
-					{'name': Constants.PLAYER_BUSINESSES, 'value': 'var biz = p.businesses.reduce(func(t, b): return b if t == -1 and not b.has("extortion") and n[b.get("hood_index")].family_2_ownership > 0 else t, -1); var rate = snappedf(randf_range(Constants.EXTORTION_RATE_LIMITS["fam_2"]["min"], Constants.EXTORTION_RATE_LIMITS["fam_2"]["max"]), 0.01); biz["extortion"] = {"by":"fam_2", "rate":rate, "owed":0}; return false'}
+					{'name': Constants.PLAYER_BUSINESSES, 'value': func (p: Player, n: Array[NeighborhoodStats]): var biz = p.businesses.reduce(func(t, b): return b if t == -1 and not b.has('extortion') and n[b.get('hood_index')].family_2_ownership > 0 else t, -1); var rate = snappedf(randf_range(Constants.EXTORTION_RATE_LIMITS['fam_2']['min'], Constants.EXTORTION_RATE_LIMITS['fam_2']['max']), 0.01); biz['extortion'] = {'by':'fam_2', 'rate':rate, 'owed':0}; return false}
 				]
 			},
 			{
@@ -432,7 +434,7 @@ const Constants = preload('res://scripts/constants.gd')
 	},
 }
 
-@export var triggers := {
+static var triggers := {
 	Constants.TRIGGER_ARRESTED: {
 		'condition': null,
 		'outcomes': [
@@ -444,7 +446,7 @@ const Constants = preload('res://scripts/constants.gd')
 		]
 	},
 	Constants.TRIGGER_APPROACHED_BY_BANK_FOR_LOAN: {
-		'condition': 'return p.money < 10000',
+		'condition': func (p: Player, n: Array[NeighborhoodStats]): return p.money < 10000,
 		'outcomes': [
 			{
 				'action': 'get loan from bank',
@@ -454,7 +456,7 @@ const Constants = preload('res://scripts/constants.gd')
 		]
 	},
 	Constants.TRIGGER_APPROACHED_BY_FAMILY_1_FOR_LOAN: {
-		'condition': 'return p.money < 10000 and p.family_1_respect >= 0',
+		'condition': func (p: Player, n: Array[NeighborhoodStats]): return p.money < 10000 and p.family_1_respect >= 0,
 		'outcomes': [
 			{
 				'action': 'get loan from family_1',
@@ -464,7 +466,7 @@ const Constants = preload('res://scripts/constants.gd')
 		]
 	},
 	Constants.TRIGGER_APPROACHED_BY_FAMILY_2_FOR_LOAN: {
-		'condition': 'return p.money < 10000 and p.family_2_respect >= 0',
+		'condition': func (p: Player, n: Array[NeighborhoodStats]): return p.money < 10000 and p.family_2_respect >= 0,
 		'outcomes': [
 			{
 				'action': 'get loan from family_2',
@@ -474,7 +476,7 @@ const Constants = preload('res://scripts/constants.gd')
 		]
 	},
 	Constants.TRIGGER_APPROACHED_BY_FAMILY_1_TO_ROB_FROM_JOB: {
-		'condition': 'return p.job != -1 and p.family_1_respect > 0',
+		'condition': func (p: Player, n: Array[NeighborhoodStats]): return p.job != -1 and p.family_1_respect > 0,
 		'outcomes': [
 			{
 				'action': 'help family_1 rob from job',
@@ -484,7 +486,7 @@ const Constants = preload('res://scripts/constants.gd')
 		]
 	},
 	Constants.TRIGGER_APPROACHED_BY_FAMILY_2_TO_ROB_FROM_JOB: {
-		'condition': 'return p.job != -1 and p.family_2_respect > 0',
+		'condition': func (p: Player, n: Array[NeighborhoodStats]): return p.job != -1 and p.family_2_respect > 0,
 		'outcomes': [
 			{
 				'action': 'help family_2 rob from job',
@@ -494,7 +496,7 @@ const Constants = preload('res://scripts/constants.gd')
 		]
 	},
 	Constants.TRIGGER_APPROACHED_BY_FAMILY_1_TO_WORK: {
-		'condition': 'return p.family_1_respect >= 0 and p.street_smart > 0.2',
+		'condition': func (p: Player, n: Array[NeighborhoodStats]): return p.family_1_respect >= 0 and p.street_smart > 0.2,
 		'outcomes': [
 			{
 				'action': 'work for family_1',
@@ -504,7 +506,7 @@ const Constants = preload('res://scripts/constants.gd')
 		]
 	},
 	Constants.TRIGGER_APPROACHED_BY_FAMILY_2_TO_WORK: {
-		'condition': 'return p.family_2_respect >= 0 and p.street_smart > 0.2',
+		'condition': func (p: Player, n: Array[NeighborhoodStats]): return p.family_2_respect >= 0 and p.street_smart > 0.2,
 		'outcomes': [
 			{
 				'action': 'work for family_2',
@@ -520,15 +522,15 @@ const Constants = preload('res://scripts/constants.gd')
 				'action': 'succeed',
 				'chance': 0.5,
 				'chance_multiplers': [
-					'return p.family_1_respect * 0.1',
-					'return p.family_2_respect * 0.1',
+					func (p: Player, n: Array[NeighborhoodStats]): return p.family_1_respect * 0.1,
+					func (p: Player, n: Array[NeighborhoodStats]): return p.family_2_respect * 0.1,
 				],
 				'stat_requirements': [
-					'return p.money > (50000 / (1 - clampf(p.heat, 0.01, 0.99)))',
-					'return p.street_smart > 0.3',
+					func (p: Player, n: Array[NeighborhoodStats]): return p.money > (50000 / (1 - clampf(p.heat, 0.01, 0.99))),
+					func (p: Player, n: Array[NeighborhoodStats]): return p.street_smart > 0.3,
 				],
 				'stat_updates': [
-					{'name': Constants.PLAYER_MONEY, 'value': 'return -(50000 / (1 - clampf(p.heat, 0.01, 0.99)))'},
+					{'name': Constants.PLAYER_MONEY, 'value': func (p: Player, n: Array[NeighborhoodStats]): return -(50000 / (1 - clampf(p.heat, 0.01, 0.99)))},
 					{'name': Constants.PLAYER_HEAT, 'value': 0.1},
 				],
 			},
@@ -540,7 +542,7 @@ const Constants = preload('res://scripts/constants.gd')
 		]
 	},
 	Constants.TRIGGER_HIT_ATTEMPT_BY_FAMILY_1: {
-		'condition': 'return p.family_1_respect < 0',
+		'condition': func (p: Player, n: Array[NeighborhoodStats]): return p.family_1_respect < 0,
 		'outcomes': [
 			{
 				'action': 'succeed',
@@ -550,7 +552,7 @@ const Constants = preload('res://scripts/constants.gd')
 		]
 	},
 	Constants.TRIGGER_HIT_ATTEMPT_BY_FAMILY_2: {
-		'condition': 'return p.family_2_respect < 0',
+		'condition': func (p: Player, n: Array[NeighborhoodStats]): return p.family_2_respect < 0,
 		'outcomes': [
 			{
 				'action': 'succeed',
@@ -560,7 +562,7 @@ const Constants = preload('res://scripts/constants.gd')
 		]
 	},
 	Constants.TRIGGER_IRS_WANTS_PROOF_OF_INCOME: {
-		'condition': 'return p.money > 10000 and (p.family_1_respect >= 0.5 or p.family_2_respect >= 0.5)',
+		'condition': func (p: Player, n: Array[NeighborhoodStats]): return p.money > 10000 and (p.family_1_respect >= 0.5 or p.family_2_respect >= 0.5),
 		'outcomes': [
 			{
 				'action': 'succeed',
@@ -570,7 +572,7 @@ const Constants = preload('res://scripts/constants.gd')
 		]
 	},
 	Constants.TRIGGER_FAMILY_1_WANTS_TO_EXTORT_BUSINESS: {
-		'condition': 'var hi = p.businesses.reduce(func(t, b): return b.get("hood_index") if t == -1 and not b.has("extortion") and n[b.get("hood_index")].family_1_ownership > 0 else t, -1); return hi != -1 and p.family_1_respect > 0.5',
+		'condition': func (p: Player, n: Array[NeighborhoodStats]): var hi = p.businesses.reduce(func(t, b): return b.get('hood_index') if t == -1 and not b.has('extortion') and n[b.get('hood_index')].family_1_ownership > 0 else t, -1); return hi != -1 and p.family_1_respect > 0.5,
 		'outcomes': [
 			{
 				'action': 'succeed',
@@ -580,7 +582,7 @@ const Constants = preload('res://scripts/constants.gd')
 		]
 	},
 	Constants.TRIGGER_FAMILY_2_WANTS_TO_EXTORT_BUSINESS: {
-		'condition': 'var hi = p.businesses.reduce(func(t, b): return b.get("hood_index") if t == -1 and not b.has("extortion") and n[b.get("hood_index")].family_2_ownership > 0 else t, -1); return hi != -1 and p.family_2_respect > 0.5',
+		'condition': func (p: Player, n: Array[NeighborhoodStats]): var hi = p.businesses.reduce(func(t, b): return b.get('hood_index') if t == -1 and not b.has('extortion') and n[b.get('hood_index')].family_2_ownership > 0 else t, -1); return hi != -1 and p.family_2_respect > 0.5,
 		'outcomes': [
 			{
 				'action': 'succeed',
@@ -590,7 +592,7 @@ const Constants = preload('res://scripts/constants.gd')
 		]
 	},
 	Constants.TRIGGER_FAMILY_1_WANTS_TO_LAUNDER_THROUGH_BUSINESS: {
-		'condition': 'return p.businesses.size() > 0 and p.family_1_respect > 0.2',
+		'condition': func (p: Player, n: Array[NeighborhoodStats]): return p.businesses.size() > 0 and p.family_1_respect > 0.2,
 		'outcomes': [
 			{
 				'action': 'succeed',
@@ -600,7 +602,7 @@ const Constants = preload('res://scripts/constants.gd')
 		]
 	},
 	Constants.TRIGGER_FAMILY_2_WANTS_TO_LAUNDER_THROUGH_BUSINESS: {
-		'condition': 'return p.businesses.size() > 0 and p.family_2_respect > 0.2',
+		'condition': func (p: Player, n: Array[NeighborhoodStats]): return p.businesses.size() > 0 and p.family_2_respect > 0.2,
 		'outcomes': [
 			{
 				'action': 'succeed',
@@ -610,7 +612,7 @@ const Constants = preload('res://scripts/constants.gd')
 		]
 	},
 	Constants.TRIGGER_FAMILY_1_WANTS_TO_USE_BUSINESS_TO_COVER_CRIME: {
-		'condition': 'return p.businesses.size() > 0 and p.family_1_respect > 0',
+		'condition': func (p: Player, n: Array[NeighborhoodStats]): return p.businesses.size() > 0 and p.family_1_respect > 0,
 		'outcomes': [
 			{
 				'action': 'succeed',
@@ -620,7 +622,7 @@ const Constants = preload('res://scripts/constants.gd')
 		]
 	},
 	Constants.TRIGGER_FAMILY_2_WANTS_TO_USE_BUSINESS_TO_COVER_CRIME: {
-		'condition': 'return p.businesses.size() > 0 and p.family_2_respect > 0',
+		'condition': func (p: Player, n: Array[NeighborhoodStats]): return p.businesses.size() > 0 and p.family_2_respect > 0,
 		'outcomes': [
 			{
 				'action': 'succeed',
@@ -630,7 +632,7 @@ const Constants = preload('res://scripts/constants.gd')
 		]
 	},
 	Constants.TRIGGER_POLICE_WANTS_INFO_ON_FAMILY_1: {
-		'condition': 'return p.family_1_respect > 0.3',
+		'condition': func (p: Player, n: Array[NeighborhoodStats]): return p.family_1_respect > 0.3,
 		'outcomes': [
 			{
 				'action': 'succeed',
@@ -640,7 +642,7 @@ const Constants = preload('res://scripts/constants.gd')
 		]
 	},
 	Constants.TRIGGER_POLICE_WANTS_INFO_ON_FAMILY_2: {
-		'condition': 'return p.family_2_respect > 0.3',
+		'condition': func (p: Player, n: Array[NeighborhoodStats]): return p.family_2_respect > 0.3,
 		'outcomes': [
 			{
 				'action': 'succeed',
@@ -650,7 +652,7 @@ const Constants = preload('res://scripts/constants.gd')
 		]
 	},
 	Constants.TRIGGER_ROBBED_BY_FAMILY_1: {
-		'condition': 'return p.family_1_respect <= 0',
+		'condition': func (p: Player, n: Array[NeighborhoodStats]): return p.family_1_respect <= 0,
 		'outcomes': [
 			{
 				'action': 'succeed',
@@ -660,7 +662,7 @@ const Constants = preload('res://scripts/constants.gd')
 		]
 	},
 	Constants.TRIGGER_ROBBED_BY_FAMILY_2: {
-		'condition': 'return p.family_2_respect <= 0',
+		'condition': func (p: Player, n: Array[NeighborhoodStats]): return p.family_2_respect <= 0,
 		'outcomes': [
 			{
 				'action': 'succeed',
@@ -670,7 +672,7 @@ const Constants = preload('res://scripts/constants.gd')
 		]
 	},
 	Constants.TRIGGER_ROBBED_BY_STREET_GANG: {
-		'condition': 'return true',
+		'condition': func (p: Player, n: Array[NeighborhoodStats]): return true,
 		'outcomes': [
 			{
 				'action': 'succeed',
@@ -680,7 +682,7 @@ const Constants = preload('res://scripts/constants.gd')
 		]
 	},
 	Constants.TRIGGER_SABOTAGE_FAMILY_1_FOR_FAMILY_2: {
-		'condition': 'return p.family_2_respect > 0.5',
+		'condition': func (p: Player, n: Array[NeighborhoodStats]): return p.family_2_respect > 0.5,
 		'outcomes': [
 			{
 				'action': 'succeed',
@@ -690,7 +692,7 @@ const Constants = preload('res://scripts/constants.gd')
 		]
 	},
 	Constants.TRIGGER_SABOTAGE_FAMILY_2_FOR_FAMILY_1: {
-		'condition': 'return p.family_1_respect > 0.5',
+		'condition': func (p: Player, n: Array[NeighborhoodStats]): return p.family_1_respect > 0.5,
 		'outcomes': [
 			{
 				'action': 'succeed',
@@ -706,9 +708,9 @@ const Constants = preload('res://scripts/constants.gd')
 				'action': 'served time',
 				'chance': 1,
 				'stat_updates': [
-					{'name': Constants.PLAYER_STREET_SMART, 'value': 'return clampf(0.2, p.heat, p.heat) * 0.5'},
-					{'name': Constants.PLAYER_RENTALS, 'value': 'p.rentals = p.rentals.duplicate().slice(0, clampi(2 - ceili(p.heat * 10), -p.rentals.size(), 0)) if p.rentals.size() > 0 and p.heat > 0.4 else p.rentals; return false'},
-					{'name': Constants.PLAYER_BUSINESSES, 'value': 'p[Constants.PLAYER_BUSINESSES] = [] if p.heat >= 0.2 else p.businesses; return false'},
+					{'name': Constants.PLAYER_STREET_SMART, 'value': func (p: Player, n: Array[NeighborhoodStats]): return clampf(0.2, p.heat, p.heat) * 0.5},
+					{'name': Constants.PLAYER_RENTALS, 'value': func (p: Player, n: Array[NeighborhoodStats]): p.rentals = p.rentals.duplicate().slice(0, clampi(2 - ceili(p.heat * 10), -p.rentals.size(), 0)) if p.rentals.size() > 0 and p.heat > 0.4 else p.rentals; return false},
+					{'name': Constants.PLAYER_BUSINESSES, 'value': func (p: Player, n: Array[NeighborhoodStats]): p[Constants.PLAYER_BUSINESSES] = [] if p.heat >= 0.2 else p.businesses; return false},
 				]
 			}
 		]
@@ -720,12 +722,12 @@ const Constants = preload('res://scripts/constants.gd')
 				'action': 'succeed',
 				'chance': 0.5,
 				'chance_multiplers': [
-					'return p.family_1_respect * 0.1',
-					'return p.family_2_respect * 0.1',
+					func (p: Player, n: Array[NeighborhoodStats]): return p.family_1_respect * 0.1,
+					func (p: Player, n: Array[NeighborhoodStats]): return p.family_2_respect * 0.1,
 				],
 				'stat_requirements': [
-					'return p.family_1_respect > 0.5 or p.family_2_respect > 0.5',
-					'return p.street_smart > 0.3',
+					func (p: Player, n: Array[NeighborhoodStats]): return p.family_1_respect > 0.5 or p.family_2_respect > 0.5,
+					func (p: Player, n: Array[NeighborhoodStats]): return p.street_smart > 0.3,
 				],
 				'stat_updates': [
 					{'name': Constants.PLAYER_HEAT, 'value': 0.1},
@@ -739,7 +741,7 @@ const Constants = preload('res://scripts/constants.gd')
 		]
 	},
 	Constants.TRIGGER_WORKING_FOR_FAMILY_1: {
-		'condition': 'return p.family_1_respect > 0.4',
+		'condition': func (p: Player, n: Array[NeighborhoodStats]): return p.family_1_respect > 0.4,
 		'outcomes': [
 			{
 				'action': 'handle arrested',
@@ -749,7 +751,7 @@ const Constants = preload('res://scripts/constants.gd')
 		]
 	},
 	Constants.TRIGGER_WORKING_FOR_FAMILY_2: {
-		'condition': 'return p.family_2_respect > 0.4',
+		'condition': func (p: Player, n: Array[NeighborhoodStats]): return p.family_2_respect > 0.4,
 		'outcomes': [
 			{
 				'action': 'handle arrested',

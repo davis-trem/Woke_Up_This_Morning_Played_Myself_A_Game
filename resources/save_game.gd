@@ -1,7 +1,6 @@
 class_name SaveGame
 extends Resource
 
-const Events = preload('res://resources/events.gd')
 const NeighborhoodStats = preload('res://resources/neighborhood_stats.gd')
 const Player = preload('res://resources/player.gd')
 
@@ -9,7 +8,6 @@ const SAVE_GAME_PATH = 'user://save.tres'
 
 @export var version = 1
 @export var player: Player
-@export var events: Events
 @export var neighoborhood_stats_list: Array[NeighborhoodStats] = []
 
 func write_savegame():
