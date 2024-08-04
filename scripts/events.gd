@@ -5,6 +5,35 @@ const NeighborhoodStats = preload('res://resources/neighborhood_stats.gd')
 const Player = preload('res://resources/player.gd')
 const Constants = preload('res://scripts/constants.gd')
 
+#events = {
+#	[name]: {
+#		options: {
+#			type: string,
+#			stat_updates?: {
+#				name: string, value: number | (player, neighborhoods) => number | false
+#			}[],
+#			trigger?: string,
+#		}[]
+#	}
+#}
+
+#triggers = {
+#	[name]: {
+#		condition: null | (player, neighborhoods) => bool,
+#		outcomes: {
+#			action: string,
+#			chance: float,
+#			event?: string,
+#			trigger?: string,
+#			chance_multiplers?: ((player, neighborhoods) => float)[],
+#			stat_requirements?: ((player, neighborhoods) => bool)[],
+#			stat_updates?: {
+#				name: string, value: number | (player, neighborhoods) => number | false
+#			}[],
+#		}[]
+#	}
+#}
+
 static var events := {
 	Constants.EVENT_BANK_OFFERS_LOAN: {
 		'options': [
