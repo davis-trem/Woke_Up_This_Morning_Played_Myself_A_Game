@@ -1,12 +1,5 @@
 extends Control
 
-const NeighborhoodStats = preload('res://resources/neighborhood_stats.gd')
-const Player = preload('res://resources/player.gd')
-const SaveGame = preload('res://resources/save_game.gd')
-const Constants = preload('res://scripts/constants.gd')
-const Events = preload('res://scripts/events.gd')
-const Hood = preload('res://scripts/hood.gd')
-
 @onready var neighborhood_menu = $NeighborhoodMenu
 @onready var neighborhood_menu_name_label = $NeighborhoodMenu/ColorRect/MarginContainer/VBoxContainer/NameLabel
 @onready var neighborhood_menu_rent_label = $NeighborhoodMenu/ColorRect/MarginContainer/VBoxContainer/MarginContainer/VBoxContainer/GridContainer/RentLabel

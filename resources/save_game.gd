@@ -20,4 +20,3 @@ static func save_exists() -> bool:
 
 static func load_savegame() -> SaveGame:
 	return ResourceLoader.load(SAVE_GAME_PATH, '', ResourceLoader.CACHE_MODE_IGNORE)
-

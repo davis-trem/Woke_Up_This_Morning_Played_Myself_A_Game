@@ -1,3 +1,4 @@
+class_name Hood
 extends TextureButton
 
 @onready var name_label: Label = $CenterContainer/VBoxContainer/NameLabel
