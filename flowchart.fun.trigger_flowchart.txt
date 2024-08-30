@@ -1,0 +1,123 @@
+TRIGGER_ARRESTED .color_orange.shape_diamond
+  EVENT_HANDLE_GETTING_ARRESTED .color_blue.shape_diamond
+    bride: (TRIGGER_BRIBE_JURY)
+    threaten: (TRIGGER_THREATEN_JURY)
+    serve: (TRIGGER_SERVE_JAIL_TIME)
+TRIGGER_APPROACHED_BY_BANK_FOR_LOAN .color_orange.shape_diamond
+  money < 10000 .color_yellow
+    EVENT_BANK_OFFERS_LOAN .color_blue.shape_diamond
+      accept: money + 15000 \n loan++ .color_green
+      decline: nothing .color_green
+TRIGGER_APPROACHED_BY_FAMILY_1_FOR_LOAN .color_orange.shape_diamond
+  money < 10000 .color_yellow
+    EVENT_FAMILY_1_OFFERS_LOAN .color_blue.shape_diamond
+      accept: money + 15000 \n loan++ .color_green
+      decline: (TRIGGER_DECLINED_LOAN_FROM_FAMILY)
+TRIGGER_DECLINED_LOAN_FROM_FAMILY .color_orange.shape_diamond
+  (TRIGGER_HIT_ATTEMPT_BY_FAMILY_1)
+  (TRIGGER_FAMILY_SABOTAGE_BUSINESS)
+TRIGGER_FAMILY_SABOTAGE_BUSINESS .color_orange.shape_diamond
+  fam_respect < 0 .color_yellow
+    success: business -- .color_green
+    caught: fam_respect -- .color_green
+TRIGGER_APPROACHED_BY_FAMILY_1_TO_ROB_FROM_JOB .color_orange.shape_diamond
+  job ? .color_yellow
+    EVENT_FAMILY_1_WANTS_HELP_ROBBING_YOUR_JOB .color_blue.shape_diamond
+      accept: fam_respect ++ .color_green
+        TRIGGER_ROB_FROM_JOB .color_orange.shape_diamond
+          success: money ++ \n heat ++ .color_green
+          caught: (TRIGGER_ARRESTED)
+      decline: fam_respect -- .color_green
+TRIGGER_APPROACHED_BY_FAMILY_1_TO_WORK .color_orange.shape_diamond
+  fam_respect > 0.2 .color_yellow
+    accept: money ++ \n fam_respect ++ \n heat ++ .color_green
+    decline: fam_respect -- .color_green
+TRIGGER_BRIBE_JURY .color_orange.shape_diamond
+  success: money > 5000 .color_yellow
+    money -= 5000 \n heat -- .color_green
+  fail: (TRIGGER_SERVE_JAIL_TIME)
+TRIGGER_HIT_ATTEMPT_BY_FAMILY_1 .color_orange.shape_diamond
+  fam_respect < 0 .color_yellow
+    success: sanity -- .color_green
+    notice: EVENT_NOTICE_HIT_ATTEMPT .color_blue.shape_diamond
+      allow_it: sanity -- .color_green
+      run: TRIGGER_RUN_FROM_HIT .color_orange.shape_diamond
+        get_away: fam_respect -- .color_green
+        fail: fam_respect -- \n sanity -- .color_green
+      fight_back: TRIGGER_FIGHT_OFF_HIT .color_orange.shape_diamond
+        success: fam_respect -- .color_green
+        fail: sanity -- .color_green
+TRIGGER_IRS_WANTS_PROOF_OF_INCOME .color_orange.shape_diamond
+  money > 10000 \n fam_respect > 0.3 \n or heat > 0.3 .color_yellow
+    EVENT_FEDS_WANT_PROOF_OF_INCOME .color_blue.shape_diamond
+      accept: TRIGGER_IRS_INVESTIGATES_PROOF_OF_INCOME .color_orange.shape_diamond
+        find_crime: (TRIGGER_ARRESTED)
+        find_nothing: nothing .color_green
+      delince: (TRIGGER_ARRESTED)
+business in neighborhood w/ family_ownership > 0.2 .color_yellow
+  extorted: TRIGGER_FAMILY_1_WANTS_TO_EXTORT_BUSINESS .color_orange.shape_diamond
+    EVENT_FAMILY_1_WANTS_TO_EXTORT_BUSINESS .color_blue.shape_diamond
+      accept: business.extortion ++ .color_green
+      decline: fam_respect -- .color_green
+        (TRIGGER_FAMILY_SABOTAGE_BUSINESS)
+  laundered: TRIGGER_FAMILY_1_WANTS_TO_LAUNDER_THROUGH_BUSINESS .color_orange.shape_diamond
+    EVENT_FAMILY_1_WANTS_TO_LAUNDER_THROUGH_BUSINESS .color_blue.shape_diamond
+      accept: business.launder ++ \n fam_respect ++ \n heat ++ .color_green
+      decline: fam_respect -- .color_green
+        (TRIGGER_FAMILY_SABOTAGE_BUSINESS)
+  cover_crime: TRIGGER_FAMILY_1_WANTS_TO_USE_BUSINESS_TO_COVER_CRIME .color_orange.shape_diamond
+    EVENT_FAMILY_1_WANTS_TO_USE_BUSINESS_TO_COVER_CRIME .color_blue.shape_diamond
+      accept: heat ++ \n fam_respect ++ .color_green
+      decline: fam_respect -- .color_green
+        (TRIGGER_FAMILY_SABOTAGE_BUSINESS)
+TRIGGER_POLICE_WANTS_INFO_ON_FAMILY_1 .color_orange.shape_diamond
+  fam_respect > 0.3 .color_yellow
+    EVENT_FEDS_WANTS_INFO_ON_FAMILY_1 .color_blue.shape_diamond
+      accept: heat -- .color_green
+        TRIGGER_FAM_SUSPECTS_RAT .color_orange.shape_diamond
+          finds_you: (TRIGGER_HIT_ATTEMPT_BY_FAMILY_1)
+          finds_nothing: nothing .color_green
+      decline: (TRIGGER_ARRESTED)
+TRIGGER_ROBBED_BY_FAMILY_1 .color_orange.shape_diamond
+  fam_respect < 0.1 .color_yellow
+    EVENT_ROBBED_BY_FAMILY_1 .color_blue.shape_diamond
+      allow_it: money -- .color_green
+      run: TRIGGER_RUN_FROM_FAMILY_1_ROBBERY .color_orange.shape_diamond
+        get_away: fam_respect -- .color_green
+        fail: fam_respect -- \n money -- .color_green
+      fight_back: TRIGGER_FIGHT_OFF_HIT .color_orange.shape_diamond
+        success: fam_respect -- .color_green
+        fail: money -- \n sanity -- .color_green
+TRIGGER_ROBBED_BY_STREET_GANG .color_orange.shape_diamond
+  street_smart < 0.4 .color_yellow
+    EVENT_ROBBED_BY_STREET_GANG .color_blue.shape_diamond
+      allow_it: money -- \n street_smart -- .color_green
+      run: TRIGGER_RUN_FROM_STREET_GANG_ROBBERY .color_orange.shape_diamond
+        get_away: street_smart -- .color_green
+        fail: street_smart -- \n money -- .color_green
+      fight_back: TRIGGER_FIGHT_OFF_HIT .color_orange.shape_diamond
+        success: street_smart -- .color_green
+        fail: money -- \n sanity -- .color_green
+TRIGGER_SERVE_JAIL_TIME .color_orange.shape_diamond
+  years_jailed ++ .color_green
+TRIGGER_TAKE_THE_FALL_FOR_FAMILY_1 .color_orange.shape_diamond
+  fam_respect > 0.3 .color_yellow
+    EVENT_TAKE_THE_FALL_FOR_FAMILY_1 .color_blue.shape_diamond
+      accept: (TRIGGER_SERVE_JAIL_TIME)
+      decline: fam_respect -- .color_green
+TRIGGER_THREATEN_JURY .color_orange.shape_diamond
+  success: fam_respect > 0.5 \n or \n street_smart 0.3 .color_yellow
+    heat ++ \n street_smart ++ .color_green
+  fail: (TRIGGER_SERVE_JAIL_TIME)
+TRIGGER_WORKING_FOR_FAMILY_1 .color_orange.shape_diamond
+  fam_respect > 0 .color_yellow
+    EVENT_WORKING_FOR_FAMILY_1 .color_blue.shape_diamond
+      accept: fam_respect ++ \n money ++ .color_green
+      decline: fam_respect -- .color_green
+TRIGGER_EMPLOYEES_WANT_TO_UNIONIZE .color_orange.shape_diamond
+  business.length > 0 .color_yellow
+    EVENT_EMPLOYEES_WANT_TO_UNIONIZE .color_blue.shape_diamond
+      allow: neighborhood business_payout -- .color_green
+      deny: TRIGGER_DENY_EMPLOYEES_UNION .color_orange.shape_diamond
+        success: neighborhood business_payout -- .color_green
+        fail: business -- .color_green
