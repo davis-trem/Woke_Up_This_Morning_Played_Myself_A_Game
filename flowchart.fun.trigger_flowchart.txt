@@ -30,8 +30,9 @@ TRIGGER_APPROACHED_BY_FAMILY_1_TO_ROB_FROM_JOB .color_orange.shape_diamond
       decline: fam_respect -- .color_green
 TRIGGER_APPROACHED_BY_FAMILY_1_TO_WORK .color_orange.shape_diamond
   fam_respect > 0.2 .color_yellow
-    accept: money ++ \n fam_respect ++ \n heat ++ .color_green
-    decline: fam_respect -- .color_green
+    EVENT_FAMILY_1_OFFERS_WORK  .color_blue.shape_diamond
+      accept: money ++ \n fam_respect ++ \n heat ++ .color_green
+      decline: fam_respect -- .color_green
 TRIGGER_BRIBE_JURY .color_orange.shape_diamond
   success: money > 5000 .color_yellow
     money -= 5000 \n heat -- .color_green
