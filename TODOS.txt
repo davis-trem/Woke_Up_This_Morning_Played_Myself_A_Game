@@ -1,6 +1,7 @@
-jail mechanic
 city changing mechanic
 option disabled tooltip messages
+jail specific triggers
 family payout
+exit menu
 events copy
 events images

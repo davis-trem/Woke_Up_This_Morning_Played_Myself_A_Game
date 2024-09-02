@@ -1,4 +1,4 @@
-[gd_scene load_steps=22 format=3 uid="uid://cbbf3ehpra2pu"]
+[gd_scene load_steps=23 format=3 uid="uid://cbbf3ehpra2pu"]
 
 [ext_resource type="Script" path="res://scripts/game_map.gd" id="1_ftilf"]
 [ext_resource type="PackedScene" uid="uid://drm50b6ex8wt1" path="res://scenes/horizontal_spacer.tscn" id="2_4obur"]
@@ -13,6 +13,7 @@
 [ext_resource type="BitMap" uid="uid://bsqkupner51we" path="res://images/hood3bitmap.png" id="8_20p2a"]
 [ext_resource type="BitMap" uid="uid://du2vdd3jvfg66" path="res://images/hood4bitmap.png" id="10_gv3n4"]
 [ext_resource type="BitMap" uid="uid://d1nj0tb0ah0ur" path="res://images/hood5bitmap.png" id="12_t37hy"]
+[ext_resource type="Texture2D" uid="uid://cpqnlcskdsrc6" path="res://images/in_jail.jpeg" id="14_bvpwn"]
 [ext_resource type="BitMap" uid="uid://qxc7ky2k572y" path="res://images/hood6bitmap.png" id="14_w5j0q"]
 [ext_resource type="PackedScene" uid="uid://l7s3kkyh2scg" path="res://scenes/end_of_month_menu.tscn" id="15_h3yxk"]
 
@@ -147,6 +148,39 @@ offset_right = 823.05
 offset_bottom = 1098.61
 texture_normal = ExtResource("8_4d81t")
 texture_click_mask = ExtResource("14_w5j0q")
+
+[node name="Jail" type="TextureRect" parent="."]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+texture = ExtResource("14_bvpwn")
+expand_mode = 2
+
+[node name="Panel" type="Panel" parent="Jail"]
+custom_minimum_size = Vector2(250, 50)
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="MonthsLeftLabel" type="Label" parent="Jail/Panel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_font_sizes/font_size = 30
+text = "0 months lefts"
+horizontal_alignment = 1
 
 [node name="StatsPreviewControl" type="Control" parent="."]
 custom_minimum_size = Vector2(0, 50)

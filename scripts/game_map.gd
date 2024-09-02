@@ -37,6 +37,8 @@ extends Control
 @onready var dev_menu = $DevMenu
 @onready var dev_menu_trigger_button = $DevMenu/MarginContainer/ColorRect/MenuButton
 @onready var map: TextureRect = $TerritoryControl/MarginContainer/Map
+@onready var jail: TextureRect = $Jail
+@onready var months_left_label: Label = $Jail/Panel/MonthsLeftLabel
 
 enum NEIGHBORHOOD_ACTION {
 	DO_CRIME,
@@ -189,6 +191,8 @@ func _draw_territories(save_exist: bool = false):
 				(map.get_child(hood_index) as Hood).job_icon.show()
 			if player.businesses.any(func (b): return b.get('hood_index') == hood_index):
 				(map.get_child(hood_index) as Hood).company_icon.show()
+			if player.months_jailed > 0:
+				show_jail()
 		else:
 			player.territories_respect.append(0)
 			
@@ -511,6 +515,8 @@ func _handle_stat_updates(stat_update):
 
 func _hide_trigger_menu():
 	trigger_menu.hide()
+	if player.months_jailed > 0:
+		show_jail()
 
 
 func _trigger_menu_option_selected(selected_id, options):
@@ -669,12 +675,18 @@ func _continue_next_month():
 	_save_game.write_savegame()
 	player.current_month += 1
 	player.actions_left = 3
+	if player.months_jailed > 0:
+		player.months_jailed -= 1
+		months_left_label.text = '{months_jailed} months left'.format({'months_jailed': player.months_jailed})
+	
+	if player.months_jailed == 0 and jail.visible:
+		jail.hide()
 	
 	end_of_month_menu.hide()
 	
 	if player.sanity <= 0:
 		print('player ends')
-	else:
+	elif player.months_jailed == 0:
 		trigger_event()
 
 
@@ -716,6 +728,12 @@ func _show_stats_menu():
 			hood_index
 		].name + '\n'
 	stats_menu.show()
+
+
+func show_jail():
+	player.job = -1
+	months_left_label.text = '{months_jailed} months left'.format({'months_jailed': player.months_jailed})
+	jail.show()
 
 
 func _on_show_stats_button_pressed():
