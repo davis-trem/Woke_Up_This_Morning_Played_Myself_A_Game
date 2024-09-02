@@ -11,6 +11,7 @@ const ROW_PAID_LINE_EDIT = preload('res://scenes/row_paid_line_edit.tscn')
 @onready var money_label: Label = $MarginContainer/ColorRect/MarginContainer/VBoxContainer/MoneyLabel
 @onready var continue_button: Button = $MarginContainer/ColorRect/MarginContainer/VBoxContainer/ContinueButton
 @onready var details_label: Label = $MarginContainer/ColorRect/MarginContainer/VBoxContainer/DetailsLabel
+@onready var payout_label: Label = $MarginContainer/ColorRect/MarginContainer/VBoxContainer/PayoutLabel
 
 var player: Player
 var neighborhoods: Array[NeighborhoodStats]

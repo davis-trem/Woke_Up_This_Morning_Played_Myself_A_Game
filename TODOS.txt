@@ -1,6 +1,6 @@
-implement laundering
 jail mechanic
 city changing mechanic
 option disabled tooltip messages
+family payout
 events copy
 events images

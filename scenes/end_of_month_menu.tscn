@@ -102,6 +102,12 @@ layout_mode = 2
 theme_override_colors/font_color = Color(0, 0, 0, 1)
 autowrap_mode = 2
 
+[node name="PayoutLabel" type="Label" parent="MarginContainer/ColorRect/MarginContainer/VBoxContainer"]
+custom_minimum_size = Vector2(0, 20)
+layout_mode = 2
+theme_override_colors/font_color = Color(0, 0.686275, 0, 1)
+autowrap_mode = 2
+
 [node name="ContinueButton" type="Button" parent="MarginContainer/ColorRect/MarginContainer/VBoxContainer"]
 layout_mode = 2
 size_flags_vertical = 10

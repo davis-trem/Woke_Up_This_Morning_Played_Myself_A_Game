@@ -613,14 +613,29 @@ func _calculate_total_expenses() -> Dictionary:
 	}
 
 
-func _calculate_total_income() -> Dictionary:
-	var job_payout = 0
-	if player.job != -1:
-		job_payout = neighborhoods[player.job].job_payout
+func _calculate_total_income() -> Array:
+	var payouts := []
 	
-	var total_business_payout = 0
+	if player.job != -1:
+		payouts.append({
+			'key': 'job_payout',
+			'value': neighborhoods[player.job].job_payout,
+			'name': neighborhoods[player.job].name,
+		})
+	
 	for business in player.businesses:
-		total_business_payout += neighborhoods[business.get('hood_index')].business_payout
+		payouts.append({
+			'key': 'businesss_payout',
+			'value': neighborhoods[business.get('hood_index')].business_payout,
+			'name': neighborhoods[business.get('hood_index')].name,
+		})
+		if business.get('laundering'):
+			payouts.append({
+				'key': 'businesss_laundering_payout',
+				'value': neighborhoods[business.get('hood_index')].business_payout * business['laundering']['rate'],
+				'name': neighborhoods[business.get('hood_index')].name,
+				'from': business['laundering']['by'],
+			})
 	
 	var fam_1_payout = 0
 	if player.family_1_respect >= 0.7:
@@ -630,29 +645,19 @@ func _calculate_total_income() -> Dictionary:
 	if player.family_2_respect >= 0.7:
 		pass # TODO
 	
-	return {
-		'job_payout': job_payout,
-		'total_business_payout':total_business_payout,
-		'fam_1_payout': fam_1_payout,
-		'fam_2_payout': fam_2_payout
-	}
+	return payouts
 
 
 func _show_end_of_month_menu():
-	end_of_month_menu.details_label.text = ''
+	end_of_month_menu.payout_label.text = ''
 	var total_income := _calculate_total_income()
-	for key in total_income:
-		if total_income[key] > 0:
-			player.money += total_income[key]
-			end_of_month_menu.details_label.text += tr(key).format({
-				'payout': total_income[key],
-				'businesses': ', '.join(
-					player.businesses.map(
-						func(b): return neighborhoods[b.get('hood_index')].name
-					)
-				),
-				'fam_1': 'fam_1',
-				'fam_2': 'fam_2'
+	for payout in total_income:
+		if payout['value'] > 0:
+			player.money += payout['value']
+			end_of_month_menu.payout_label.text += tr(payout['key']).format({
+				'value': payout.get('value'),
+				'name': payout.get('name'),
+				'from': payout.get('from'),
 			}) + '\n'
 	
 	end_of_month_menu.player = player
@@ -693,7 +698,7 @@ func _handle_lost_business(hood_index: int):
 func _show_stats_menu():
 	stats_menu_money_label.text = '${0}'.format([player.money])
 	stats_menu_income_label.text = '${0}'.format([
-		_calculate_total_income().values().reduce(func(total, num): return total + num, 0)
+		_calculate_total_income().reduce(func(total, payout): return total + payout['value'], 0)
 	])
 	stats_menu_fam_1_progress_bar.value = player.family_1_respect
 	stats_menu_fam_2_progress_bar.value = player.family_2_respect

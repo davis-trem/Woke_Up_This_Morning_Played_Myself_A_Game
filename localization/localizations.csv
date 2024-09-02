@@ -1,8 +1,9 @@
 keys,en,es
 main_menu_new_game_button,New Game,Neuva Juego
 main_menu_resume_button,Resume,Resume
-job_payout,Received ${payout} from job,
-total_business_payout,Received ${payout} from businesses in {businesses},
+job_payout,Received ${value} from job in ${name},
+businesss_payout,Received ${value} for business in ${name},
+businesss_laundering_payout,Received ${value} for laundering for ${from} from your business in ${name},
 fam_1_payout,Received ${payout} from {fam_1},
 fam_2_payout,Received ${payout} from {fam_2},
 cannot_afford_retails,Evicted from rentals {rentals} because you did not have enough to afford it,

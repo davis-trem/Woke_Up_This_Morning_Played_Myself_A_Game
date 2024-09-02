@@ -204,12 +204,13 @@ static var events := {
 			}
 		]
 	},
-	Constants.EVENT_FAMILY_1_WANTS_TO_LAUNDER_THROUGH_BUSINESS: { # TODO: fix
+	Constants.EVENT_FAMILY_1_WANTS_TO_LAUNDER_THROUGH_BUSINESS: {
 		'options': [
 			{
 				'type': 'accept',
 				'stat_updates': [
-					{'name': Constants.PLAYER_MONEY, 'value': 500},
+					{'name': Constants.PLAYER_BUSINESSES, 'value': func (p: Player, n: Array[NeighborhoodStats]): var biz = p.businesses.reduce(func(t, b): return b if t == -1 and not b.has('laundering') and n[b.get('hood_index')].family_1_ownership > 0 else t, -1); var rate = snappedf(randf_range(Constants.EXTORTION_RATE_LIMITS['fam_1']['min'], Constants.EXTORTION_RATE_LIMITS['fam_1']['max']), 0.01); biz['laundering'] = {'by':'fam_1', 'rate':rate}; return false},
+					{'name': Constants.PLAYER_FAMILY_1_RESPECT, 'value': 0.1},
 					{'name': Constants.PLAYER_HEAT, 'value': 0.3},
 				]
 			},
@@ -221,12 +222,13 @@ static var events := {
 			}
 		]
 	},
-	Constants.EVENT_FAMILY_2_WANTS_TO_LAUNDER_THROUGH_BUSINESS: { # TODO: fix
+	Constants.EVENT_FAMILY_2_WANTS_TO_LAUNDER_THROUGH_BUSINESS: {
 		'options': [
 			{
 				'type': 'accept',
 				'stat_updates': [
-					{'name': Constants.PLAYER_MONEY, 'value': 250},
+					{'name': Constants.PLAYER_BUSINESSES, 'value': func (p: Player, n: Array[NeighborhoodStats]): var biz = p.businesses.reduce(func(t, b): return b if t == -1 and not b.has('laundering') and n[b.get('hood_index')].family_2_ownership > 0 else t, -1); var rate = snappedf(randf_range(Constants.EXTORTION_RATE_LIMITS['fam_2']['min'], Constants.EXTORTION_RATE_LIMITS['fam_2']['max']), 0.01); biz['laundering'] = {'by':'fam_2', 'rate':rate}; return false},
+					{'name': Constants.PLAYER_FAMILY_2_RESPECT, 'value': 0.1},
 					{'name': Constants.PLAYER_HEAT, 'value': 0.2},
 				]
 			},

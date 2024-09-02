@@ -2,7 +2,7 @@ class_name Player
 extends Resource
 
 @export var id := 0
-@export var businesses := [] # {hood_index, extortion?: {by:enum(fam_1, fam_2), rate:float, owed:int}, laundering?: {} }[]
+@export var businesses := [] # {hood_index, extortion?: {by:enum(fam_1, fam_2), rate:float, owed:int}, laundering?: {by:enum(fam_1, fam_2), rate:float} }[]
 @export var family_1_respect := 0.0
 @export var family_2_respect := 0.0
 @export var heat := 0.0
